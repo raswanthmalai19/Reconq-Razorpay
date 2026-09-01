@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.db
+models/*.joblib
+.streamlit/
+.pytest_cache/
+*.egg-info/
