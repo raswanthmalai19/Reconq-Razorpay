@@ -8,6 +8,7 @@ the pipeline honestly.
 import csv
 import os
 import random
+import zlib
 from datetime import date, timedelta
 
 random.seed(42)
@@ -80,7 +81,7 @@ def apply_mismatch(txn, cls):
     }
     ledger = {
         "invoice_id": txn["invoice_id"],
-        "customer_ref": f"CUST-{hash(txn['customer']) % 9000 + 1000}",
+        "customer_ref": f"CUST-{zlib.crc32(txn['customer'].encode()) % 9000 + 1000}",
         "amount_inr": amt,
         "invoice_date": d.isoformat(),
         "memo": ledger_memo,

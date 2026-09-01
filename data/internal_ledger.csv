@@ -1,158 +1,158 @@
 invoice_id,customer_ref,amount_inr,invoice_date,memo,status
-INV-2045,CUST-4762,25359139,2026-08-08,Payment received - order 45,paid
-INV-2025-1,CUST-5292,2490307,2026-08-17,Payment received - order 25 part 1,paid
-INV-2034-3,CUST-5552,11523131,2026-08-22,Payment received - order 34 part 3,paid
-INV-2029,CUST-8451,41204650,2026-08-20,Payment received - order 29,paid
-INV-2103,CUST-4762,49956093,2026-08-28,Payment received - order 103,paid
-INV-2078,CUST-5448,32724,2026-08-28,Payment received - order 78,paid
-INV-2000,CUST-1295,2201959,2026-08-17,Payment received - order 0,paid
-INV-2147,CUST-1295,37472841,2026-08-03,Payment received - order 147,paid
-INV-2123,CUST-5552,808236,2026-08-26,Payment received - order 123,paid
-INV-2126,CUST-3573,7931553,2026-08-03,Payment received - order 126,paid
-INV-2144,CUST-5552,7841075,2026-08-15,Payment received - order 144,paid
-INV-2063-2,CUST-4762,1688,2026-08-25,Payment received - order 63 part 2,paid
-INV-2072,CUST-5448,35836116,2026-08-15,Payment received - order 72,paid
-INV-2142,CUST-8451,96486,2026-08-16,Payment received - order 142,paid
-INV-2132,CUST-8451,8752615,2026-08-02,Payment received - order 132,paid
-INV-2025-2,CUST-5292,2327375,2026-08-17,Payment received - order 25 part 2,paid
-INV-2058,CUST-5292,3862950,2026-08-07,Payment received - order 58,paid
-INV-2097,CUST-9428,57121,2026-08-01,Payment received - order 97,paid
-INV-2134,CUST-1295,2446724,2026-08-31,Payment received - order 134,partial
-INV-2131,CUST-8451,24840461,2026-08-19,Payment received - order 131,paid
-INV-2013,CUST-3573,2106383,2026-08-06,Payment received - order 13,paid
-INV-2002,CUST-7070,971118,2026-08-02,Payment received - order 2,paid
-INV-2091,CUST-6358,6392177,2026-08-06,Payment received - order 91,paid
-INV-2001-2,CUST-4762,366713,2026-08-12,Payment received - order 1 part 2,paid
-INV-2048,CUST-5292,7506766,2026-08-31,Payment received - order 48,paid
-INV-2139,CUST-4762,6916338,2026-08-02,Payment received - order 139,paid
-INV-2088,CUST-1295,20889848,2026-08-15,Payment received - order 88,paid
-INV-2096,CUST-5426,22802,2026-08-07,Payment received - order 96,paid
-INV-2012,CUST-9428,22413,2026-08-02,Payment received - order 12,paid
-INV-2124,CUST-5292,978021,2026-08-09,Payment received - order 124,paid
-INV-2025-3,CUST-5292,253886,2026-08-17,Payment received - order 25 part 3,paid
-INV-2050,CUST-7070,21092454,2026-08-21,Payment received - order 50,paid
-INV-2100,CUST-5292,29299983,2026-08-08,Payment received - order 100,paid
-INV-2109,CUST-7057,44070612,2026-08-31,Payment received - order 109,paid
-INV-2042,CUST-1295,1235600,2026-08-22,Payment received - order 42,paid
-INV-2057,CUST-9428,98071,2026-08-03,Payment received - order 57,paid
-INV-2001-1,CUST-4762,449525,2026-08-12,Payment received - order 1 part 1,paid
-INV-2020,CUST-7057,4290121,2026-08-15,Payment received - order 20,paid
-INV-2081,CUST-6358,32322921,2026-08-20,Payment received - order 81,paid
-INV-2024,CUST-5552,93424,2026-08-24,Payment received - order 24,partial
-INV-2063-1,CUST-4762,7110,2026-08-25,Payment received - order 63 part 1,paid
-INV-2028,CUST-5448,3610689,2026-08-12,Payment received - order 28,partial
-INV-2049,CUST-5292,1311417,2026-08-24,Payment received - order 49,paid
-INV-2068-1,CUST-3573,4462793,2026-08-15,Payment received - order 68 part 1,paid
-INV-2018,CUST-6358,263099,2026-08-19,Payment received - order 18,paid
-INV-2076,CUST-7070,6921843,2026-08-04,Payment received - order 76,paid
-INV-2094,CUST-3573,5911149,2026-08-04,Payment received - order 94,paid
-INV-2030,CUST-3573,2331621,2026-08-29,Payment received - order 30,paid
-INV-2087,CUST-1295,3744404,2026-08-15,Payment received - order 87,paid
-INV-2079,CUST-5292,5055260,2026-08-31,Payment received - order 79,paid
-INV-2140,CUST-6358,8092415,2026-08-17,Payment received - order 140,paid
-INV-2133,CUST-7057,40163,2026-08-22,Payment received - order UNKNOWN,paid
-INV-2064,CUST-8451,69280,2026-08-19,Payment received - order 64,paid
-INV-2022,CUST-5552,21399496,2026-08-27,Payment received - order 22,paid
-INV-2056,CUST-4762,38967255,2026-08-30,Payment received - order 56,paid
-INV-2143,CUST-5426,91331,2026-08-05,Payment received - order 143,paid
-INV-2121,CUST-1295,556298,2026-08-21,Payment received - order 121,paid
-INV-2145,CUST-5292,338018,2026-08-14,Payment received - order 145,paid
-INV-2080,CUST-4762,15827,2026-08-05,Payment received - order 80,paid
-INV-2053,CUST-6358,49216,2026-08-28,Payment received - order 53,paid
-INV-2113,CUST-9428,15822792,2026-08-19,Payment received - order 113,paid
-INV-2125,CUST-1295,42169302,2026-08-31,Payment received - order 125,paid
-INV-2146,CUST-3573,89280,2026-08-11,Payment received - order 146,paid
-INV-2084,CUST-5448,26340703,2026-08-10,Payment received - order 84,paid
-INV-2111,CUST-9428,69950,2026-08-25,Payment received - order 111,paid
-INV-2089,CUST-7070,61754,2026-08-03,Payment received - order 89,paid
-INV-2027,CUST-5448,1793531,2026-08-18,Payment received - order 27,paid
-INV-2092,CUST-7057,28800416,2026-08-11,Payment received - order 92,paid
-INV-2119,CUST-6358,42562,2026-08-30,Payment received - order 119,paid
-INV-2009,CUST-5292,27242047,2026-08-14,Payment received - order 9,paid
-INV-2065,CUST-6358,83821,2026-08-26,Payment received - order UNKNOWN,paid
-INV-2005,CUST-7070,45984563,2026-08-04,Payment received - order 5,paid
-INV-2036,CUST-5448,2462068,2026-08-09,Payment received - order 36,paid
-INV-2003-3,CUST-9428,98337,2026-08-05,Payment received - order 3 part 3,paid
-INV-2085,CUST-5426,1796623,2026-08-30,Payment received - order 85,paid
-INV-2046,CUST-3573,67260,2026-08-25,Payment received - order 46,paid
-INV-2129,CUST-8451,35416157,2026-08-30,Payment received - order 129,paid
-INV-2114,CUST-6358,507944,2026-08-16,Payment received - order 114,paid
-INV-2116,CUST-5426,3684801,2026-08-19,Payment received - order 116,paid
-INV-2040,CUST-5552,8110934,2026-08-13,Payment received - order 40,paid
-INV-2017,CUST-4762,52721,2026-08-28,Payment received - order 17,paid
-INV-2108,CUST-5426,6456,2026-08-16,Payment received - order 108,paid
-INV-2061,CUST-5448,1664146,2026-08-27,Payment received - order 61,paid
-INV-2062,CUST-8451,672484,2026-08-15,Payment received - order 62,paid
-INV-2077,CUST-5552,39248,2026-08-02,Payment received - order 77,paid
-INV-2051,CUST-4762,46744,2026-08-05,Payment received - order 51,paid
-INV-2026,CUST-8451,2526592,2026-08-06,Payment received - order 26,paid
-INV-2099,CUST-8451,2290940,2026-08-16,Payment received - order 99,paid
-INV-2019,CUST-5426,7430233,2026-08-30,Payment received - order 19,paid
-INV-2130,CUST-1295,11488485,2026-08-04,Payment received - order 130,paid
-INV-2090,CUST-5448,9630802,2026-08-19,Payment received - order 90,paid
-INV-2007,CUST-9428,261754,2026-08-09,Payment received - order 7,paid
-INV-2083,CUST-9428,1876140,2026-08-09,Payment received - order 83,paid
-INV-2037,CUST-3573,1347757,2026-08-12,Payment received - order 37,paid
-INV-2010,CUST-8451,86978,2026-08-13,Payment received - order 10,paid
-INV-2115,CUST-5292,18582,2026-08-29,Payment received - order 115,paid
-INV-2117,CUST-5292,22084867,2026-08-28,Payment received - order 117,partial
-INV-2141,CUST-9428,2825233,2026-08-15,Payment received - order 141,paid
-INV-2136,CUST-7070,402205,2026-08-19,Payment received - order 136,paid
-INV-2148,CUST-5448,323743,2026-08-18,Payment received - order 148,paid
-INV-2128,CUST-5552,83047,2026-08-20,Payment received - order 128,paid
-INV-2035,CUST-8451,14336102,2026-08-12,Payment received - order 35,paid
-INV-2021,CUST-5426,1590720,2026-08-17,Payment received - order 21,partial
-INV-2074,CUST-5426,23231652,2026-08-09,Payment received - order 74,paid
-INV-2066,CUST-3573,5712792,2026-08-01,Payment received - order 66,paid
-INV-2095,CUST-5448,44774699,2026-08-14,Payment received - order 95,paid
-INV-2052,CUST-5552,12569154,2026-08-11,Payment received - order 52,paid
-INV-2003-2,CUST-9428,30772,2026-08-05,Payment received - order 3 part 2,paid
-INV-2086,CUST-4762,1686773,2026-08-21,Payment received - order 86,paid
-INV-2093,CUST-3573,4973494,2026-08-22,Payment received - order 93,paid
-INV-2127,CUST-3573,5910850,2026-08-19,Payment received - order 127,paid
-INV-2067,CUST-4762,35423404,2026-08-23,Payment received - order 67,paid
-INV-2054,CUST-8451,40139005,2026-08-18,Payment received - order 54,paid
-INV-2043,CUST-5426,1693183,2026-08-22,Payment received - order 43,paid
-INV-2059,CUST-1295,40080393,2026-08-09,Payment received - order 59,paid
-INV-2068-2,CUST-3573,3399251,2026-08-15,Payment received - order 68 part 2,paid
-INV-2069,CUST-5448,32793986,2026-08-11,Payment received - order 69,paid
-INV-2008,CUST-5292,45295323,2026-08-08,Payment received - order 8,paid
-INV-2101,CUST-1295,557446,2026-08-28,Payment received - order 101,paid
-INV-2102,CUST-5448,5612027,2026-08-27,Payment received - order 102,paid
-INV-2135,CUST-7057,83216,2026-08-02,Payment received - order 135,paid
-INV-2006,CUST-1295,911372,2026-08-01,Payment received - order 6,partial
-INV-2031,CUST-4762,1867681,2026-08-09,Payment received - order 31,paid
-INV-2098,CUST-7070,32033560,2026-08-03,Payment received - order UNKNOWN,paid
-INV-2041,CUST-5292,4076349,2026-08-15,Payment received - order 41,paid
-INV-2004,CUST-5426,2414375,2026-08-23,Payment received - order 4,paid
-INV-2003-1,CUST-9428,176451,2026-08-05,Payment received - order 3 part 1,paid
-INV-2107,CUST-5292,96612,2026-08-17,Payment received - order 107,paid
-INV-2138,CUST-5448,98716,2026-08-05,Payment received - order 138,paid
-INV-2070,CUST-5426,6156576,2026-08-11,Payment received - order 70,paid
-INV-2015,CUST-7070,26920299,2026-08-05,Payment received - order 15,paid
-INV-2122,CUST-4762,4816966,2026-08-24,Payment received - order 122,paid
-INV-2082,CUST-6358,27708840,2026-08-10,Payment received - order 82,paid
-INV-2011,CUST-3573,17608356,2026-08-05,Payment received - order 11,paid
-INV-2063-3,CUST-4762,20520,2026-08-25,Payment received - order 63 part 3,paid
-INV-2068-3,CUST-3573,12941252,2026-08-15,Payment received - order 68 part 3,paid
-INV-2105,CUST-7057,25318834,2026-08-02,Payment received - order 105,paid
-INV-2112,CUST-7057,71799,2026-08-02,Payment received - order 112,paid
-INV-2014,CUST-3573,12345416,2026-08-01,Payment received - order 14,paid
-INV-2104,CUST-7057,40514907,2026-08-15,Payment received - order 104,paid
-INV-2034-1,CUST-5552,11153076,2026-08-22,Payment received - order 34 part 1,paid
-INV-2071,CUST-7070,1782771,2026-08-03,Payment received - order 71,paid
-INV-2073,CUST-5552,7688334,2026-08-16,Payment received - order 73,paid
-INV-2106,CUST-5448,1792476,2026-08-16,Payment received - order 106,partial
-INV-2137,CUST-4762,82159,2026-08-09,Payment received - order 137,paid
-INV-2110,CUST-9428,64483,2026-08-08,Payment received - order 110,paid
-INV-2118,CUST-9428,41191,2026-08-27,Payment received - order 118,paid
-INV-2039,CUST-3573,1080102,2026-08-07,Payment received - order 39,paid
-INV-2016,CUST-5448,6843794,2026-08-02,Payment received - order 16,partial
-INV-2034-2,CUST-5552,1369638,2026-08-22,Payment received - order 34 part 2,paid
-INV-2038,CUST-5426,11641,2026-08-24,Payment received - order 38,paid
-INV-2044,CUST-1295,19793702,2026-08-20,Payment received - order 44,paid
-INV-2060,CUST-1295,1897583,2026-08-21,Payment received - order 60,paid
-INV-2149,CUST-9428,4972312,2026-08-28,Payment received - order 149,paid
-INV-2023,CUST-5552,71766,2026-08-22,Payment received - order 23,paid
-INV-2055,CUST-5448,18776865,2026-08-16,Payment received - order 55,paid
-INV-2032,CUST-5292,359419,2026-08-07,Payment received - order 32,paid
+INV-2045,CUST-6708,25359139,2026-08-08,Payment received - order 45,paid
+INV-2025-1,CUST-5502,2490307,2026-08-17,Payment received - order 25 part 1,paid
+INV-2034-3,CUST-7273,11523131,2026-08-22,Payment received - order 34 part 3,paid
+INV-2029,CUST-5564,41204650,2026-08-20,Payment received - order 29,paid
+INV-2103,CUST-6708,49956093,2026-08-28,Payment received - order 103,paid
+INV-2078,CUST-2872,32724,2026-08-28,Payment received - order 78,paid
+INV-2000,CUST-8844,2201959,2026-08-17,Payment received - order 0,paid
+INV-2147,CUST-8844,37472841,2026-08-03,Payment received - order 147,paid
+INV-2123,CUST-7273,808236,2026-08-26,Payment received - order 123,paid
+INV-2126,CUST-4290,7931553,2026-08-03,Payment received - order 126,paid
+INV-2144,CUST-7273,7841075,2026-08-15,Payment received - order 144,paid
+INV-2063-2,CUST-6708,1688,2026-08-25,Payment received - order 63 part 2,paid
+INV-2072,CUST-2872,35836116,2026-08-15,Payment received - order 72,paid
+INV-2142,CUST-5564,96486,2026-08-16,Payment received - order 142,paid
+INV-2132,CUST-5564,8752615,2026-08-02,Payment received - order 132,paid
+INV-2025-2,CUST-5502,2327375,2026-08-17,Payment received - order 25 part 2,paid
+INV-2058,CUST-5502,3862950,2026-08-07,Payment received - order 58,paid
+INV-2097,CUST-5192,57121,2026-08-01,Payment received - order 97,paid
+INV-2134,CUST-8844,2446724,2026-08-31,Payment received - order 134,partial
+INV-2131,CUST-5564,24840461,2026-08-19,Payment received - order 131,paid
+INV-2013,CUST-4290,2106383,2026-08-06,Payment received - order 13,paid
+INV-2002,CUST-8600,971118,2026-08-02,Payment received - order 2,paid
+INV-2091,CUST-8003,6392177,2026-08-06,Payment received - order 91,paid
+INV-2001-2,CUST-6708,366713,2026-08-12,Payment received - order 1 part 2,paid
+INV-2048,CUST-5502,7506766,2026-08-31,Payment received - order 48,paid
+INV-2139,CUST-6708,6916338,2026-08-02,Payment received - order 139,paid
+INV-2088,CUST-8844,20889848,2026-08-15,Payment received - order 88,paid
+INV-2096,CUST-1721,22802,2026-08-07,Payment received - order 96,paid
+INV-2012,CUST-5192,22413,2026-08-02,Payment received - order 12,paid
+INV-2124,CUST-5502,978021,2026-08-09,Payment received - order 124,paid
+INV-2025-3,CUST-5502,253886,2026-08-17,Payment received - order 25 part 3,paid
+INV-2050,CUST-8600,21092454,2026-08-21,Payment received - order 50,paid
+INV-2100,CUST-5502,29299983,2026-08-08,Payment received - order 100,paid
+INV-2109,CUST-3109,44070612,2026-08-31,Payment received - order 109,paid
+INV-2042,CUST-8844,1235600,2026-08-22,Payment received - order 42,paid
+INV-2057,CUST-5192,98071,2026-08-03,Payment received - order 57,paid
+INV-2001-1,CUST-6708,449525,2026-08-12,Payment received - order 1 part 1,paid
+INV-2020,CUST-3109,4290121,2026-08-15,Payment received - order 20,paid
+INV-2081,CUST-8003,32322921,2026-08-20,Payment received - order 81,paid
+INV-2024,CUST-7273,93424,2026-08-24,Payment received - order 24,partial
+INV-2063-1,CUST-6708,7110,2026-08-25,Payment received - order 63 part 1,paid
+INV-2028,CUST-2872,3610689,2026-08-12,Payment received - order 28,partial
+INV-2049,CUST-5502,1311417,2026-08-24,Payment received - order 49,paid
+INV-2068-1,CUST-4290,4462793,2026-08-15,Payment received - order 68 part 1,paid
+INV-2018,CUST-8003,263099,2026-08-19,Payment received - order 18,paid
+INV-2076,CUST-8600,6921843,2026-08-04,Payment received - order 76,paid
+INV-2094,CUST-4290,5911149,2026-08-04,Payment received - order 94,paid
+INV-2030,CUST-4290,2331621,2026-08-29,Payment received - order 30,paid
+INV-2087,CUST-8844,3744404,2026-08-15,Payment received - order 87,paid
+INV-2079,CUST-5502,5055260,2026-08-31,Payment received - order 79,paid
+INV-2140,CUST-8003,8092415,2026-08-17,Payment received - order 140,paid
+INV-2133,CUST-3109,40163,2026-08-22,Payment received - order UNKNOWN,paid
+INV-2064,CUST-5564,69280,2026-08-19,Payment received - order 64,paid
+INV-2022,CUST-7273,21399496,2026-08-27,Payment received - order 22,paid
+INV-2056,CUST-6708,38967255,2026-08-30,Payment received - order 56,paid
+INV-2143,CUST-1721,91331,2026-08-05,Payment received - order 143,paid
+INV-2121,CUST-8844,556298,2026-08-21,Payment received - order 121,paid
+INV-2145,CUST-5502,338018,2026-08-14,Payment received - order 145,paid
+INV-2080,CUST-6708,15827,2026-08-05,Payment received - order 80,paid
+INV-2053,CUST-8003,49216,2026-08-28,Payment received - order 53,paid
+INV-2113,CUST-5192,15822792,2026-08-19,Payment received - order 113,paid
+INV-2125,CUST-8844,42169302,2026-08-31,Payment received - order 125,paid
+INV-2146,CUST-4290,89280,2026-08-11,Payment received - order 146,paid
+INV-2084,CUST-2872,26340703,2026-08-10,Payment received - order 84,paid
+INV-2111,CUST-5192,69950,2026-08-25,Payment received - order 111,paid
+INV-2089,CUST-8600,61754,2026-08-03,Payment received - order 89,paid
+INV-2027,CUST-2872,1793531,2026-08-18,Payment received - order 27,paid
+INV-2092,CUST-3109,28800416,2026-08-11,Payment received - order 92,paid
+INV-2119,CUST-8003,42562,2026-08-30,Payment received - order 119,paid
+INV-2009,CUST-5502,27242047,2026-08-14,Payment received - order 9,paid
+INV-2065,CUST-8003,83821,2026-08-26,Payment received - order UNKNOWN,paid
+INV-2005,CUST-8600,45984563,2026-08-04,Payment received - order 5,paid
+INV-2036,CUST-2872,2462068,2026-08-09,Payment received - order 36,paid
+INV-2003-3,CUST-5192,98337,2026-08-05,Payment received - order 3 part 3,paid
+INV-2085,CUST-1721,1796623,2026-08-30,Payment received - order 85,paid
+INV-2046,CUST-4290,67260,2026-08-25,Payment received - order 46,paid
+INV-2129,CUST-5564,35416157,2026-08-30,Payment received - order 129,paid
+INV-2114,CUST-8003,507944,2026-08-16,Payment received - order 114,paid
+INV-2116,CUST-1721,3684801,2026-08-19,Payment received - order 116,paid
+INV-2040,CUST-7273,8110934,2026-08-13,Payment received - order 40,paid
+INV-2017,CUST-6708,52721,2026-08-28,Payment received - order 17,paid
+INV-2108,CUST-1721,6456,2026-08-16,Payment received - order 108,paid
+INV-2061,CUST-2872,1664146,2026-08-27,Payment received - order 61,paid
+INV-2062,CUST-5564,672484,2026-08-15,Payment received - order 62,paid
+INV-2077,CUST-7273,39248,2026-08-02,Payment received - order 77,paid
+INV-2051,CUST-6708,46744,2026-08-05,Payment received - order 51,paid
+INV-2026,CUST-5564,2526592,2026-08-06,Payment received - order 26,paid
+INV-2099,CUST-5564,2290940,2026-08-16,Payment received - order 99,paid
+INV-2019,CUST-1721,7430233,2026-08-30,Payment received - order 19,paid
+INV-2130,CUST-8844,11488485,2026-08-04,Payment received - order 130,paid
+INV-2090,CUST-2872,9630802,2026-08-19,Payment received - order 90,paid
+INV-2007,CUST-5192,261754,2026-08-09,Payment received - order 7,paid
+INV-2083,CUST-5192,1876140,2026-08-09,Payment received - order 83,paid
+INV-2037,CUST-4290,1347757,2026-08-12,Payment received - order 37,paid
+INV-2010,CUST-5564,86978,2026-08-13,Payment received - order 10,paid
+INV-2115,CUST-5502,18582,2026-08-29,Payment received - order 115,paid
+INV-2117,CUST-5502,22084867,2026-08-28,Payment received - order 117,partial
+INV-2141,CUST-5192,2825233,2026-08-15,Payment received - order 141,paid
+INV-2136,CUST-8600,402205,2026-08-19,Payment received - order 136,paid
+INV-2148,CUST-2872,323743,2026-08-18,Payment received - order 148,paid
+INV-2128,CUST-7273,83047,2026-08-20,Payment received - order 128,paid
+INV-2035,CUST-5564,14336102,2026-08-12,Payment received - order 35,paid
+INV-2021,CUST-1721,1590720,2026-08-17,Payment received - order 21,partial
+INV-2074,CUST-1721,23231652,2026-08-09,Payment received - order 74,paid
+INV-2066,CUST-4290,5712792,2026-08-01,Payment received - order 66,paid
+INV-2095,CUST-2872,44774699,2026-08-14,Payment received - order 95,paid
+INV-2052,CUST-7273,12569154,2026-08-11,Payment received - order 52,paid
+INV-2003-2,CUST-5192,30772,2026-08-05,Payment received - order 3 part 2,paid
+INV-2086,CUST-6708,1686773,2026-08-21,Payment received - order 86,paid
+INV-2093,CUST-4290,4973494,2026-08-22,Payment received - order 93,paid
+INV-2127,CUST-4290,5910850,2026-08-19,Payment received - order 127,paid
+INV-2067,CUST-6708,35423404,2026-08-23,Payment received - order 67,paid
+INV-2054,CUST-5564,40139005,2026-08-18,Payment received - order 54,paid
+INV-2043,CUST-1721,1693183,2026-08-22,Payment received - order 43,paid
+INV-2059,CUST-8844,40080393,2026-08-09,Payment received - order 59,paid
+INV-2068-2,CUST-4290,3399251,2026-08-15,Payment received - order 68 part 2,paid
+INV-2069,CUST-2872,32793986,2026-08-11,Payment received - order 69,paid
+INV-2008,CUST-5502,45295323,2026-08-08,Payment received - order 8,paid
+INV-2101,CUST-8844,557446,2026-08-28,Payment received - order 101,paid
+INV-2102,CUST-2872,5612027,2026-08-27,Payment received - order 102,paid
+INV-2135,CUST-3109,83216,2026-08-02,Payment received - order 135,paid
+INV-2006,CUST-8844,911372,2026-08-01,Payment received - order 6,partial
+INV-2031,CUST-6708,1867681,2026-08-09,Payment received - order 31,paid
+INV-2098,CUST-8600,32033560,2026-08-03,Payment received - order UNKNOWN,paid
+INV-2041,CUST-5502,4076349,2026-08-15,Payment received - order 41,paid
+INV-2004,CUST-1721,2414375,2026-08-23,Payment received - order 4,paid
+INV-2003-1,CUST-5192,176451,2026-08-05,Payment received - order 3 part 1,paid
+INV-2107,CUST-5502,96612,2026-08-17,Payment received - order 107,paid
+INV-2138,CUST-2872,98716,2026-08-05,Payment received - order 138,paid
+INV-2070,CUST-1721,6156576,2026-08-11,Payment received - order 70,paid
+INV-2015,CUST-8600,26920299,2026-08-05,Payment received - order 15,paid
+INV-2122,CUST-6708,4816966,2026-08-24,Payment received - order 122,paid
+INV-2082,CUST-8003,27708840,2026-08-10,Payment received - order 82,paid
+INV-2011,CUST-4290,17608356,2026-08-05,Payment received - order 11,paid
+INV-2063-3,CUST-6708,20520,2026-08-25,Payment received - order 63 part 3,paid
+INV-2068-3,CUST-4290,12941252,2026-08-15,Payment received - order 68 part 3,paid
+INV-2105,CUST-3109,25318834,2026-08-02,Payment received - order 105,paid
+INV-2112,CUST-3109,71799,2026-08-02,Payment received - order 112,paid
+INV-2014,CUST-4290,12345416,2026-08-01,Payment received - order 14,paid
+INV-2104,CUST-3109,40514907,2026-08-15,Payment received - order 104,paid
+INV-2034-1,CUST-7273,11153076,2026-08-22,Payment received - order 34 part 1,paid
+INV-2071,CUST-8600,1782771,2026-08-03,Payment received - order 71,paid
+INV-2073,CUST-7273,7688334,2026-08-16,Payment received - order 73,paid
+INV-2106,CUST-2872,1792476,2026-08-16,Payment received - order 106,partial
+INV-2137,CUST-6708,82159,2026-08-09,Payment received - order 137,paid
+INV-2110,CUST-5192,64483,2026-08-08,Payment received - order 110,paid
+INV-2118,CUST-5192,41191,2026-08-27,Payment received - order 118,paid
+INV-2039,CUST-4290,1080102,2026-08-07,Payment received - order 39,paid
+INV-2016,CUST-2872,6843794,2026-08-02,Payment received - order 16,partial
+INV-2034-2,CUST-7273,1369638,2026-08-22,Payment received - order 34 part 2,paid
+INV-2038,CUST-1721,11641,2026-08-24,Payment received - order 38,paid
+INV-2044,CUST-8844,19793702,2026-08-20,Payment received - order 44,paid
+INV-2060,CUST-8844,1897583,2026-08-21,Payment received - order 60,paid
+INV-2149,CUST-5192,4972312,2026-08-28,Payment received - order 149,paid
+INV-2023,CUST-7273,71766,2026-08-22,Payment received - order 23,paid
+INV-2055,CUST-2872,18776865,2026-08-16,Payment received - order 55,paid
+INV-2032,CUST-5502,359419,2026-08-07,Payment received - order 32,paid

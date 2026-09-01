@@ -38,7 +38,7 @@ def find_split_merge_candidates(buckets: dict):
                     "settlement_ids": [srow["settlement_id"]],
                     "invoice_ids": [g["invoice_id"] for g in group],
                     "match_type": "split",
-                    "confidence": 0.9,
+                    "confidence": _group_confidence(group, target, key="amount_inr"),
                 })
                 consumed_settlement_ids.add(srow["settlement_id"])
                 consumed_invoice_ids.update(g["invoice_id"] for g in group)
@@ -57,7 +57,7 @@ def find_split_merge_candidates(buckets: dict):
                     "settlement_ids": [g["settlement_id"] for g in group],
                     "invoice_ids": [lrow["invoice_id"]],
                     "match_type": "merge",
-                    "confidence": 0.9,
+                    "confidence": _group_confidence(group, target, key="amount_inr"),
                 })
                 consumed_invoice_ids.add(lrow["invoice_id"])
                 consumed_settlement_ids.update(g["settlement_id"] for g in group)
@@ -76,3 +76,14 @@ def _find_summing_subset(rows, target, key, id_key, exclude):
             if abs(total - target) <= AMOUNT_TOLERANCE_PAISE:
                 return list(combo)
     return None
+
+
+def _group_confidence(group, target, key) -> float:
+    """Confidence derived from how tight the subset sum is against tolerance,
+    not a fixed constant -- a sum off by Re 0 scores near 1.0, a sum at the
+    edge of AMOUNT_TOLERANCE_PAISE scores near the floor."""
+    total = sum(int(g[key]) for g in group)
+    delta = abs(total - target)
+    floor = 0.75
+    tightness = 1.0 - (delta / AMOUNT_TOLERANCE_PAISE if AMOUNT_TOLERANCE_PAISE else 0)
+    return round(floor + (1.0 - floor) * max(0.0, tightness), 4)

@@ -3,6 +3,7 @@ exception drill-down with Accept/Override, audit log, CSV export.
 """
 import os
 import sys
+import tempfile
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,6 +13,7 @@ import streamlit as st
 
 from engine.audit_log import append_event, append_override, get_all_events, init_db
 from engine.confidence_model import load_model
+from engine.ingestion import SchemaValidationError
 from engine.pipeline import run_reconciliation
 from engine.train import train_and_save
 from llm.client import explain
@@ -43,6 +45,7 @@ def _amount_lookup(settlement_path, ledger_path):
 def run_pipeline(settlement_path, ledger_path):
     model = get_or_train_model()
     with st.status("Running reconciliation pipeline...", expanded=True) as status:
+        st.write("Validating input schema...")
         st.write("Exact matching...")
         time.sleep(0.15)
         result = run_reconciliation(settlement_path, ledger_path, model)
@@ -101,23 +104,38 @@ def record_table(result):
     for sid in result["unresolved_settlements"]:
         rows.append({"id": sid, "invoice": "", "status": "UNRESOLVED", "confidence": None, "type": "n/a"})
     df = pd.DataFrame(rows)
-    st.dataframe(df, use_container_width=True, height=350)
+    st.dataframe(df, width="stretch", height=350)
     return df
+
+
+def _group_explanation(gm, s_amt):
+    """Evidence-only explanation for a split/merge group -- deterministic, no LLM
+    needed since the evidence (which rows sum to which) is already unambiguous."""
+    total = sum(s_amt.get(sid, 0) for sid in gm["settlement_ids"]) if gm["match_type"] == "merge" else \
+        s_amt.get(gm["settlement_ids"][0], 0)
+    return (f"Detected a {gm['match_type']} across {len(gm['settlement_ids'])} settlement row(s) and "
+            f"{len(gm['invoice_ids'])} ledger row(s) summing to Rs {total/100:,.2f} within tolerance. "
+            f"Routed to human review by policy -- split/merge groups always require a look, "
+            f"regardless of confidence.")
 
 
 def exception_drilldown(result, s_amt, s_narr, l_memo):
     review_items = [a for a in result["assigned"] if a["status"] in ("HUMAN_REVIEW", "UNRESOLVED")]
-    group_items = [gm for gm in result["group_matches"]]
+    group_items = list(result["group_matches"])
     if not review_items and not group_items:
         st.info("No exceptions in this run.")
         return
 
-    labels = [f"{a['settlement_id']} <-> {a['invoice_id']} ({a['status']})" for a in review_items]
-    labels += [f"{','.join(gm['settlement_ids'])} <-> {','.join(gm['invoice_ids'])} (split/merge)" for gm in group_items]
+    pair_labels = [f"1:1  |  {a['settlement_id']} <-> {a['invoice_id']} ({a['status']})" for a in review_items]
+    group_labels = [f"SPLIT/MERGE  |  {','.join(gm['settlement_ids'])} <-> {','.join(gm['invoice_ids'])}"
+                     for gm in group_items]
+    labels = pair_labels + group_labels
     choice = st.selectbox("Select an exception to inspect", labels)
+    if not choice:
+        return
+    idx = labels.index(choice)
 
-    if choice and "<->" in choice and "split/merge" not in choice:
-        idx = labels.index(choice)
+    if idx < len(review_items):
         item = review_items[idx]
         evidence = dict(item["features"])
         evidence["amount_inr"] = s_amt.get(item["settlement_id"], 0)
@@ -151,6 +169,28 @@ def exception_drilldown(result, s_amt, s_narr, l_memo):
         if bcol2.button("Override", key=f"override_{item['settlement_id']}"):
             append_override(RUN_ID, item["settlement_id"], "human:analyst", "override", "")
             st.warning("Recorded: Overridden.")
+    else:
+        gm = group_items[idx - len(review_items)]
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("**Settlement row(s)**")
+            st.json({"settlement_ids": gm["settlement_ids"],
+                      "amounts_paise": [s_amt.get(sid, 0) for sid in gm["settlement_ids"]]})
+        with col2:
+            st.write("**Ledger row(s)**")
+            st.json({"invoice_ids": gm["invoice_ids"]})
+        st.progress(min(max(gm["confidence"], 0.0), 1.0), text=f"Confidence: {gm['confidence']:.1%}")
+        st.write(f"**Match type:** `{gm['match_type']}`  |  **Status:** `{gm['status']}`")
+        st.write(_group_explanation(gm, s_amt))
+
+        gid = ",".join(gm["settlement_ids"])
+        bcol1, bcol2 = st.columns(2)
+        if bcol1.button("Accept", key=f"accept_group_{gid}"):
+            append_override(RUN_ID, gid, "human:analyst", "accept", "")
+            st.success("Recorded: Accepted.")
+        if bcol2.button("Override", key=f"override_group_{gid}"):
+            append_override(RUN_ID, gid, "human:analyst", "override", "")
+            st.warning("Recorded: Overridden.")
 
 
 def audit_log_view():
@@ -159,7 +199,7 @@ def audit_log_view():
         st.info("No audit events yet.")
         return
     df = pd.DataFrame(events)
-    st.dataframe(df, use_container_width=True, height=300)
+    st.dataframe(df, width="stretch", height=300)
 
 
 def main():
@@ -169,15 +209,38 @@ def main():
 
     tab1, tab2, tab3, tab4 = st.tabs(["Run", "Decisions", "Exception Drill-Down", "Audit Log"])
 
-    settlement_path = os.path.join(DATA_DIR, "settlement_report.csv")
-    ledger_path = os.path.join(DATA_DIR, "internal_ledger.csv")
+    sample_settlement_path = os.path.join(DATA_DIR, "settlement_report.csv")
+    sample_ledger_path = os.path.join(DATA_DIR, "internal_ledger.csv")
 
     with tab1:
-        st.write("Using the seeded synthetic sample dataset (154 settlement rows, 8 labeled mismatch classes).")
+        st.write("Upload your own settlement + ledger CSVs, or use the seeded synthetic sample dataset "
+                 "(154 settlement rows, 8 labeled mismatch classes).")
+        col_up1, col_up2 = st.columns(2)
+        settlement_file = col_up1.file_uploader("Settlement report CSV", type="csv", key="settlement_upload")
+        ledger_file = col_up2.file_uploader("Internal ledger CSV", type="csv", key="ledger_upload")
+        use_sample = st.checkbox("Use sample data instead", value=not (settlement_file and ledger_file))
+
         if st.button("Run reconciliation", type="primary"):
-            st.session_state["result"] = run_pipeline(settlement_path, ledger_path)
+            if use_sample or not (settlement_file and ledger_file):
+                settlement_path, ledger_path = sample_settlement_path, sample_ledger_path
+            else:
+                tmp_dir = tempfile.mkdtemp(prefix="reconq_upload_")
+                settlement_path = os.path.join(tmp_dir, "settlement_report.csv")
+                ledger_path = os.path.join(tmp_dir, "internal_ledger.csv")
+                with open(settlement_path, "wb") as f:
+                    f.write(settlement_file.getvalue())
+                with open(ledger_path, "wb") as f:
+                    f.write(ledger_file.getvalue())
+            try:
+                st.session_state["result"] = run_pipeline(settlement_path, ledger_path)
+                st.session_state["settlement_path"] = settlement_path
+                st.session_state["ledger_path"] = ledger_path
+            except SchemaValidationError as exc:
+                st.error(f"Input rejected: {exc}")
+
         if "result" in st.session_state:
-            s_amt, _s_narr, _l_memo = _amount_lookup(settlement_path, ledger_path)
+            s_amt, _s_narr, _l_memo = _amount_lookup(
+                st.session_state["settlement_path"], st.session_state["ledger_path"])
             kpi_cards(st.session_state["result"], s_amt)
 
     with tab2:
@@ -189,7 +252,8 @@ def main():
 
     with tab3:
         if "result" in st.session_state:
-            s_amt, s_narr, l_memo = _amount_lookup(settlement_path, ledger_path)
+            s_amt, s_narr, l_memo = _amount_lookup(
+                st.session_state["settlement_path"], st.session_state["ledger_path"])
             exception_drilldown(st.session_state["result"], s_amt, s_narr, l_memo)
         else:
             st.info("Run reconciliation first (Run tab).")
