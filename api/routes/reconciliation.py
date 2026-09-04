@@ -335,4 +335,20 @@ def override_decision(req: OverrideRequest):
 
 @router.get('/audit/{run_id}')
 def get_audit(run_id: str):
-    return get_all_events(run_id)
+    from datetime import datetime, timezone
+    events = get_all_events(run_id)
+    # Fix timestamp: DB stores Unix seconds (float), JS Date() needs ISO string
+    for e in events:
+        ts = e.get("timestamp")
+        if isinstance(ts, (int, float)) and ts > 0:
+            e["timestamp"] = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+        elif not ts:
+            e["timestamp"] = None
+        # Rename payload_json → payload for frontend
+        if "payload_json" in e:
+            try:
+                import json as _json
+                e["payload"] = _json.loads(e.pop("payload_json"))
+            except Exception:
+                e["payload"] = e.pop("payload_json")
+    return events

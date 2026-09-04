@@ -167,6 +167,45 @@ def _template_fallback(evidence: dict, reason: str) -> dict:
     }
 
 
+def _call_llm(prompt: str) -> tuple[Optional[str], str, str]:
+    """Calls Gemini first, falls back to Groq if Gemini is unavailable or fails.
+
+    Returns (raw_text_or_None, provider_name, error_reason_if_failed).
+    """
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if api_key:
+        try:
+            client = genai.Client(api_key=api_key)
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    temperature=0.1,  # Low temperature — we want precision, not creativity
+                    max_output_tokens=2048,
+                ),
+            )
+            return response.text.strip(), "Gemini", ""
+        except Exception:
+            pass  # fall through to Groq
+
+    from llm.groq_client import groq_chat, groq_available
+
+    if groq_available():
+        groq_system = (
+            f"{SYSTEM_PROMPT}\n\nNOTE: Respond with the raw JSON object only — "
+            f"no markdown fences, no text before or after the JSON."
+        )
+        try:
+            result = groq_chat(groq_system, prompt, max_tokens=2048)
+            if result and not result.startswith("Groq error:"):
+                return result.strip(), "Groq", ""
+        except Exception:
+            pass
+
+    return None, "", "Both Gemini and Groq are unavailable or failed. Check API keys in .env."
+
+
 def generate_suggested_fix(
     exception_data: dict,
     anomaly_data: dict = None,
@@ -180,10 +219,6 @@ def generate_suggested_fix(
     """
     evidence = _build_evidence_object(exception_data, anomaly_data)
 
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        return _template_fallback(evidence, "Gemini API key not configured")
-
     prompt = (
         f"Generate a fix proposal for this reconciliation exception.\n\n"
         f"EVIDENCE (this is your only source of truth — every number you cite "
@@ -192,28 +227,17 @@ def generate_suggested_fix(
         f"Respond with the JSON fix proposal only. No markdown fences, no explanation outside the JSON."
     )
 
+    raw, provider, error_reason = _call_llm(prompt)
+    if raw is None:
+        return _template_fallback(evidence, error_reason)
+
     try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                temperature=0.1,  # Low temperature — we want precision, not creativity
-                max_output_tokens=2048,
-            ),
-        )
-
-        raw = response.text.strip()
         # Strip any markdown fences the model may add despite instructions
-        raw = re.sub(r"```(?:json)?\s*", "", raw).strip()
+        raw = re.sub(r"```(?:json)?\s*", "", raw.strip()).strip()
         raw = re.sub(r"```\s*$", "", raw).strip()
-
         proposal = json.loads(raw)
     except json.JSONDecodeError:
-        return _template_fallback(evidence, "LLM returned invalid JSON")
-    except Exception as e:
-        return _template_fallback(evidence, f"LLM call failed: {type(e).__name__}")
+        return _template_fallback(evidence, f"{provider} returned invalid JSON")
 
     # ── Schema validation ──────────────────────────────────────────────
     adj_type = proposal.get("adjustment_type", "")

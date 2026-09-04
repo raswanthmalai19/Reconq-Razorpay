@@ -35,12 +35,15 @@ class ApproveRequest(BaseModel):
 
 
 @router.post('/suggested-fix/generate')
-def generate_fix(req: FixRequest):
+async def generate_fix(req: FixRequest):
     """Generate a fix proposal for a reconciliation exception.
 
     The proposal is a structured JSON object, never executed automatically.
     Every number is cross-checked against the evidence before returning.
     """
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+
     exception_data = {
         "settlement_id": req.settlement_id,
         "invoice_id": req.invoice_id,
@@ -59,7 +62,22 @@ def generate_fix(req: FixRequest):
             "description": req.anomaly_description or "",
         }
 
-    proposal = generate_suggested_fix(exception_data, anomaly_data)
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        try:
+            proposal = await asyncio.wait_for(
+                loop.run_in_executor(pool, generate_suggested_fix, exception_data, anomaly_data),
+                timeout=20.0,
+            )
+        except asyncio.TimeoutError:
+            # Return a safe fallback instead of hanging
+            proposal = {
+                "adjustment_type": "no_confident_fix",
+                "affected_records": [],
+                "explanation": "The AI took too long to analyze this exception (>20s). Please try again.",
+                "confidence_score": 0.0,
+                "validation": {"cross_check_passed": False, "errors": ["timeout"]},
+            }
     return proposal
 
 

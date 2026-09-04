@@ -57,15 +57,17 @@ def _get_or_create_copilot(run_id: str) -> "ReconCopilot":
 
 
 @router.post("/copilot/chat", response_model=CopilotResponse)
-def copilot_chat(req: CopilotRequest):
+async def copilot_chat(req: CopilotRequest):
     """Send a message to the Gemini-powered reconciliation copilot."""
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+
     store = get_store()
 
-    # Try to get run_id — fall back to the most recent run if 'default'
+    # Resolve run_id
     run_id = req.run_id
     if run_id == "default" and store:
-        run_id = next(reversed(store))  # most recently inserted
-
+        run_id = next(reversed(store))
     if run_id not in store and store:
         run_id = next(reversed(store))
 
@@ -80,7 +82,24 @@ def copilot_chat(req: CopilotRequest):
 
     try:
         copilot = _get_or_create_copilot(run_id)
-        reply = copilot.chat(req.message)
+
+        # Run the blocking LLM call in a thread with a hard 25-second timeout
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            try:
+                reply = await asyncio.wait_for(
+                    loop.run_in_executor(pool, copilot.chat, req.message),
+                    timeout=25.0,
+                )
+            except asyncio.TimeoutError:
+                return CopilotResponse(
+                    reply=(
+                        "The AI took too long to respond (>25s). "
+                        "This usually means the Gemini API is overloaded. "
+                        "The Groq fallback is also being tried — please try again in a moment."
+                    )
+                )
+
         return CopilotResponse(reply=str(reply), sources=[run_id])
     except Exception as exc:
         return CopilotResponse(reply=f"Copilot encountered an error: {exc}. Please try again.")

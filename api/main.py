@@ -25,11 +25,14 @@ from api.routes.reconciliation import router as recon_router
 from api.routes.copilot import router as copilot_router
 from api.routes.anomalies import router as anomaly_router
 from api.routes.suggested_fix import router as fix_router
+from api.routes.razorpay_sync import router as razorpay_router
 
 app.include_router(recon_router, prefix='/api')
 app.include_router(copilot_router, prefix='/api')
 app.include_router(anomaly_router, prefix='/api')
 app.include_router(fix_router, prefix='/api')
+app.include_router(razorpay_router, prefix='/api')
+
 
 @app.get('/api/health')
 def health():

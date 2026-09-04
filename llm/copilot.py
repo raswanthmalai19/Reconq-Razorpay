@@ -218,6 +218,54 @@ class ReconCopilot:
             "estimated_overcharge_rupees": round(overcharge_impact, 2),
         }
 
+    def _build_groq_context(self) -> str:
+        """Build a rich text context from reconciliation data for Groq fallback."""
+        stats = self._get_summary_stats()
+        anomaly = self._get_anomaly_report()
+
+        lines = [
+            "=== RECONCILIATION SUMMARY ===",
+            f"Total settlements: {stats['total_settlements']}",
+            f"Auto-matched: {stats['auto_matched']} ({stats['match_rate_pct']}%)",
+            f"Human review queue: {stats['human_review_queue']}",
+            f"Unresolved: {stats['unresolved']}",
+            f"Rupees auto-cleared: ₹{stats['rupees_auto_cleared']:,.2f}",
+            f"Rupees in review: ₹{stats['rupees_in_review_queue']:,.2f}",
+            f"Bank confirmed: {stats['bank_confirmed']}",
+            f"Bank discrepancies: {stats['bank_discrepancies']}",
+            f"Funds in transit: {stats['funds_in_transit']}",
+            "",
+            "=== ANOMALIES & LEAKAGE ===",
+            f"Total leakage detected: ₹{anomaly['total_leakage_rupees']:,.2f}",
+            f"Anomaly count: {anomaly['anomaly_count']}",
+        ]
+        for a in anomaly.get("anomalies", []):
+            lines.append(f"  - {a['type']} ({a['severity']}): ₹{a['impact_rupees']:,.2f} — {a['description']}")
+
+        # Add unresolved settlement IDs
+        unresolved = self._result.get("unresolved_settlements", [])
+        if unresolved:
+            lines.append("")
+            lines.append(f"=== UNRESOLVED SETTLEMENTS ({len(unresolved)}) ===")
+            for sid in unresolved[:10]:
+                amt = self._settle_amounts.get(sid, 0) / 100.0
+                lines.append(f"  - {sid}: ₹{amt:,.2f}")
+            if len(unresolved) > 10:
+                lines.append(f"  ... and {len(unresolved) - 10} more")
+
+        # Add human-review items
+        review_items = [a for a in self._result.get("assigned", []) if a.get("status") == "HUMAN_REVIEW"]
+        if review_items:
+            lines.append("")
+            lines.append(f"=== HUMAN REVIEW ITEMS ({len(review_items)}) ===")
+            for item in review_items[:10]:
+                sid = item.get("settlement_id", "")
+                amt = self._settle_amounts.get(sid, 0) / 100.0
+                conf = round(item.get("confidence", 0) * 100, 1)
+                lines.append(f"  - {sid} → {item.get('invoice_id', '')} | ₹{amt:,.2f} | {conf}% confidence")
+
+        return "\n".join(lines)
+
     # ------------------------------------------------------------------
     # Chat
     # ------------------------------------------------------------------
@@ -247,24 +295,48 @@ class ReconCopilot:
         self._init_chat()
 
     def chat(self, user_message: str) -> str:
-        """Send a message and get back a plain-text response."""
+        """Send a message and get back a plain-text response.
+
+        Primary: Gemini with function calling (deterministic tool execution).
+        Fallback: Groq llama-3.3-70b-versatile with embedded context (when Gemini fails).
+        """
+        from llm.groq_client import groq_chat, groq_available
+
         if not self._result:
             return "No reconciliation results available yet. Please run a reconciliation first."
-        if not self._client:
-            return (
-                "The Gemini copilot requires a GEMINI_API_KEY. "
-                "Please add one to your .env file — get a free key from https://aistudio.google.com/"
-            )
-        if not self._chat:
-            self._init_chat()
-        try:
-            resp = self._chat.send_message(user_message)
-            return resp.text or "I'm sorry, I couldn't generate a response. Please try rephrasing."
-        except Exception as exc:
-            # Try reinitialising and retrying once
-            try:
+
+        # --- Try Gemini first ---
+        if self._client:
+            if not self._chat:
                 self._init_chat()
+            try:
                 resp = self._chat.send_message(user_message)
-                return resp.text or "No response generated."
-            except Exception:
-                return f"Copilot error: {exc}. Please try again."
+                return resp.text or "I couldn't generate a response. Please try rephrasing."
+            except Exception as exc:
+                # Retry once with fresh chat
+                try:
+                    self._init_chat()
+                    resp = self._chat.send_message(user_message)
+                    return resp.text or "No response generated."
+                except Exception:
+                    # Gemini failed — fall through to Groq
+                    pass
+
+        # --- Groq fallback ---
+        if groq_available():
+            context = self._build_groq_context()
+            groq_system = (
+                f"{SYSTEM_PROMPT}\n\n"
+                "NOTE: You are operating in fallback mode. "
+                "The following reconciliation data has been pre-loaded for you. "
+                "Answer the user's question using ONLY this data — do not invent numbers.\n\n"
+                f"{context}"
+            )
+            result = groq_chat(groq_system, user_message, max_tokens=2048)
+            return f"{result}\n\n---\n*Answered by Groq (Llama 3.3 70B) — Gemini unavailable*"
+
+        # --- Both failed ---
+        return (
+            "Both Gemini and Groq are unavailable. "
+            "Please check your API keys in the .env file."
+        )
