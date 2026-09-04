@@ -1,0 +1,17 @@
+[project]
+name = "reconq"
+version = "2.0.0"
+description = "Risk-Weighted AI Reconciliation Engine for Payment Gateways"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+
+[project.urls]
+Repository = "https://github.com/your-username/reconq"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

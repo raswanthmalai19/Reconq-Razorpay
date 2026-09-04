@@ -64,8 +64,16 @@ def explain(evidence: dict, narration_a: str = "", narration_b: str = "") -> dic
     injected_a = scan_text(narration_a)
     injected_b = scan_text(narration_b)
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    if not api_key:
+    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+
+    if gemini_key:
+        from llm.gemini_client import gemini_explain
+        result = gemini_explain(evidence, narration_a, narration_b)
+        if result.get("source") != "template_fallback":
+            return result
+
+    if not anthropic_key:
         return _template_verdict(evidence, "no API key configured")
 
     try:

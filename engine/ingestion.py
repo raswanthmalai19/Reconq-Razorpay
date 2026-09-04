@@ -31,9 +31,35 @@ def _check_columns(df: pd.DataFrame, required, file_label: str):
 def load_settlement_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, dtype=str, keep_default_na=False)
     _check_columns(df, SETTLEMENT_REQUIRED_COLUMNS, "settlement_report.csv")
-    df["amount_inr"] = df["amount_inr"].map(normalize_amount_paise)
-    df["fee_inr"] = df["fee_inr"].map(lambda v: normalize_amount_paise(v) if v not in ("", None) else 0)
-    df["tax_inr"] = df["tax_inr"].map(lambda v: normalize_amount_paise(v) if v not in ("", None) else 0)
+
+    bad_rows = []
+    for col in ("amount_inr", "fee_inr", "tax_inr"):
+        fn = normalize_amount_paise if col == "amount_inr" else (lambda v: normalize_amount_paise(v) if v not in ("", None) else 0)
+        good = []
+        for i, v in enumerate(df[col]):
+            try:
+                good.append(fn(v))
+            except (ValueError, TypeError):
+                good.append(None)
+                bad_rows.append((i, col, v))
+        df[col] = good
+
+    if bad_rows:
+        import warnings
+        details = "; ".join(f"row {r} col {c}='{v}'" for r, c, v in bad_rows)
+        warnings.warn(f"settlement_report.csv: {len(bad_rows)} malformed value(s) quarantined — {details}")
+
+    # Drop rows where amount_inr could not be parsed (essential field)
+    n_before = len(df)
+    df = df.dropna(subset=["amount_inr"])
+    n_dropped = n_before - len(df)
+    if n_dropped:
+        import warnings
+        warnings.warn(f"settlement_report.csv: {n_dropped} row(s) dropped — unparseable amount_inr")
+
+    df["amount_inr"] = df["amount_inr"].astype(int)
+    df["fee_inr"] = df["fee_inr"].fillna(0).astype(int)
+    df["tax_inr"] = df["tax_inr"].fillna(0).astype(int)
     df["settlement_date"] = df["settlement_date"].map(normalize_date)
     df["utr_reference_norm"] = df["utr_reference"].map(normalize_reference)
     df["narration_norm"] = df["narration"].map(normalize_text)

@@ -1,0 +1,105 @@
+@import 'tailwindcss';
+
+:root {
+  --bg-primary: #0a0a1a;
+  --bg-secondary: #111128;
+  --bg-card: #1a1a3e;
+  --border: #2a2a5a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --accent-blue: #3b82f6;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --accent-yellow: #f59e0b;
+  --accent-purple: #8b5cf6;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+
+/* Copilot markdown rendering */
+.copilot-markdown p { margin: 0 0 8px 0; }
+.copilot-markdown p:last-child { margin-bottom: 0; }
+.copilot-markdown strong { color: var(--text-primary); font-weight: 700; }
+.copilot-markdown code {
+  background: rgba(139,92,246,0.12);
+  color: #c4b5fd;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.copilot-markdown pre {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.copilot-markdown pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: 11px;
+}
+.copilot-markdown ul, .copilot-markdown ol {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+.copilot-markdown li {
+  margin: 3px 0;
+  line-height: 1.5;
+}
+.copilot-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin: 8px 0;
+}
+.copilot-markdown th {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.copilot-markdown td {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(42,42,90,0.4);
+  color: var(--text-primary);
+}
+.copilot-markdown h1, .copilot-markdown h2, .copilot-markdown h3 {
+  margin: 10px 0 6px 0;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.copilot-markdown h1 { font-size: 15px; }
+.copilot-markdown h2 { font-size: 13px; }
+.copilot-markdown h3 { font-size: 12px; }
+.copilot-markdown blockquote {
+  border-left: 3px solid var(--accent-purple);
+  padding-left: 10px;
+  margin: 8px 0;
+  color: var(--text-secondary);
+}
+
+/* Bounce animation for loading dots */
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-5px); }
+}

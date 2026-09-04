@@ -1,10 +1,42 @@
-.env
+# Python
+.venv/
 __pycache__/
 *.pyc
-.venv/
-venv/
-*.db
-models/*.joblib
-.streamlit/
+*.pyo
+*.pyd
 .pytest_cache/
 *.egg-info/
+dist/
+build/
+*.joblib
+*.pkl
+models/*.joblib
+
+# Environment & secrets
+.env
+
+# Database
+*.db
+*.sqlite
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.oxlintrc.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temp dirs created by API
+tmp/
+reconq_api_*/
