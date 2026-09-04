@@ -1,99 +1,98 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  UploadCloud, Play, CheckCircle2, AlertCircle,
-  TrendingUp, Banknote, ShieldAlert, Activity, Database
+  UploadCloud, Play, CheckCircle2, AlertCircle, Info,
+  TrendingUp, Banknote, ShieldAlert, Activity, Database, RefreshCw, Zap
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
-  Tooltip, ResponsiveContainer, Legend
+  Tooltip, ResponsiveContainer
 } from 'recharts';
 import KPICard from '../components/KPICard';
-import { reconcileFiles, reconcileSample, getComparison } from '../api/client';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import EmptyState from '../components/ui/EmptyState';
+import { SkeletonKPIGrid, SkeletonBlock } from '../components/ui/Skeleton';
+import { reconcileFiles, reconcileSample, getComparison, syncRazorpay, getRazorpayStatus } from '../api/client';
 
 const PIPELINE_STAGES = [
-  'Loading CSVs',
-  'Exact Match',
-  'Blocking Buckets',
-  'Group Detection',
-  'ML Scoring',
-  'Hungarian Assignment',
-  'Risk Policy',
-  'Bank Matching',
-  'Anomaly Detection',
-  'Complete ✓',
+  'Loading CSVs', 'Exact Match', 'Blocking Buckets', 'Group Detection',
+  'ML Scoring', 'Hungarian Assignment', 'Risk Policy', 'Bank Matching', 'Anomaly Detection', 'Done',
 ];
 
-const STATUS_COLORS = {
-  'Auto-Matched': '#10b981',
-  'Human Review': '#f59e0b',
-  'Unresolved':   '#ef4444',
+const DONUT_COLORS = ['#2563eb', '#ca8a04', '#dc2626'];
+const MAX_CSV_SIZE_MB = 10;
+
+const fmtRupees = (v) => {
+  if (!v && v !== 0) return '—';
+  if (v >= 10000000) return `₹${(v / 10000000).toFixed(2)}Cr`;
+  if (v >= 100000)   return `₹${(v / 100000).toFixed(2)}L`;
+  if (v >= 1000)     return `₹${(v / 1000).toFixed(1)}K`;
+  return `₹${Math.round(v)}`;
 };
 
-const DONUT_COLORS = ['#10b981', '#f59e0b', '#ef4444'];
-
-function UploadZone({ label, sublabel, type, file, onChange, optional }) {
+function UploadZone({ label, sublabel, file, onChange, optional, error }) {
   const ref = useRef();
   return (
-    <div
-      className="relative border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-blue-500/50 hover:bg-blue-500/5"
-      style={{ borderColor: file ? 'var(--accent-green)' : 'var(--border)', minHeight: 130 }}
-      onClick={() => ref.current.click()}
-    >
-      <input ref={ref} type="file" accept=".csv" className="hidden" onChange={e => onChange(e.target.files[0])} />
-      {file ? (
-        <>
-          <CheckCircle2 size={28} className="mb-2" style={{ color: 'var(--accent-green)' }} />
-          <p className="text-sm font-semibold" style={{ color: 'var(--accent-green)' }}>{file.name}</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Click to replace</p>
-        </>
-      ) : (
-        <>
-          <UploadCloud size={28} className="mb-2" style={{ color: 'var(--text-secondary)' }} />
-          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {label} {optional && <span className="text-xs font-normal" style={{ color: 'var(--text-secondary)' }}>(Optional)</span>}
-          </p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{sublabel}</p>
-        </>
-      )}
+    <div>
+      <div
+        onClick={() => ref.current.click()}
+        className="rq-card-hover"
+        style={{
+          border: `1px dashed ${error ? 'var(--accent-red)' : file ? 'var(--accent-green)' : 'var(--border)'}`,
+          borderRadius: 8, padding: '18px 14px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+          cursor: 'pointer', background: error ? 'var(--accent-red-light)' : file ? 'var(--accent-green-light)' : 'var(--bg-subtle)',
+          minHeight: 100, justifyContent: 'center',
+        }}
+      >
+        <input
+          ref={ref} type="file" accept=".csv" style={{ display: 'none' }}
+          onChange={e => onChange(e.target.files[0])}
+        />
+        {file ? (
+          <>
+            <CheckCircle2 size={20} color="var(--accent-green)" style={{ marginBottom: 6 }} />
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'var(--accent-green)' }}>{file.name}</p>
+            <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>Click to replace</p>
+          </>
+        ) : (
+          <>
+            <UploadCloud size={20} color="var(--text-muted)" style={{ marginBottom: 6 }} />
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+              {label} {optional && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>}
+            </p>
+            <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{sublabel}</p>
+          </>
+        )}
+      </div>
+      {error && <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--accent-red)' }}>{error}</p>}
     </div>
   );
 }
 
-function PipelineAnimation({ stage }) {
+function PipelineBar({ stage }) {
   const idx = PIPELINE_STAGES.indexOf(stage);
   const pct = idx < 0 ? 0 : Math.round(((idx + 1) / PIPELINE_STAGES.length) * 100);
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium animate-pulse" style={{ color: 'var(--accent-blue)' }}>
-          {stage || 'Initializing…'}
-        </span>
-        <span style={{ color: 'var(--text-secondary)' }}>{pct}%</span>
+    <div style={{ marginTop: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={{ fontSize: 12, color: 'var(--accent-blue)', fontWeight: 500 }}>{stage || 'Starting...'}</span>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{pct}%</span>
       </div>
-      <div className="h-2 rounded-full" style={{ background: 'var(--bg-primary)' }}>
-        <div
-          className="h-2 rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)' }}
-        />
-      </div>
-      <div className="flex gap-1 flex-wrap">
-        {PIPELINE_STAGES.map((s, i) => (
-          <span
-            key={s}
-            className="text-xs px-2 py-0.5 rounded-full transition-all"
-            style={{
-              background: i <= idx ? 'var(--accent-blue)' : 'var(--bg-primary)',
-              color: i <= idx ? '#fff' : 'var(--text-secondary)',
-              opacity: i <= idx ? 1 : 0.4,
-            }}
-          >
-            {i < idx ? '✓' : ''} {s}
-          </span>
-        ))}
+      <div style={{ height: 4, borderRadius: 4, background: '#e4e4e7', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: 'var(--accent-blue)', borderRadius: 4, transition: 'width 0.4s' }} />
       </div>
     </div>
   );
+}
+
+function validateCsv(file) {
+  if (!file) return null;
+  if (!file.name.toLowerCase().endsWith('.csv')) return 'Only .csv files are accepted.';
+  if (file.size > MAX_CSV_SIZE_MB * 1024 * 1024) return `File exceeds ${MAX_CSV_SIZE_MB}MB limit.`;
+  if (file.size === 0) return 'File is empty.';
+  return null;
 }
 
 export default function Dashboard({ results, setResults, runId, setRunId }) {
@@ -102,62 +101,16 @@ export default function Dashboard({ results, setResults, runId, setRunId }) {
   const [stage, setStage] = useState('');
   const [error, setError] = useState('');
   const [files, setFiles] = useState({ settlement: null, ledger: null, bank: null });
+  const [fileErrors, setFileErrors] = useState({});
   const [showUpload, setShowUpload] = useState(true);
-
-  const fmtRupees = (v) => {
-    if (!v && v !== 0) return '—';
-    if (v >= 10000000) return `₹${(v / 10000000).toFixed(1)}Cr`;
-    if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
-    if (v >= 1000) return `₹${(v / 1000).toFixed(1)}K`;
-    return `₹${v.toFixed(0)}`;
-  };
-
-  const animate = (stages, cb) => {
-    let i = 0;
-    const t = setInterval(() => {
-      setStage(stages[i]);
-      i++;
-      if (i >= stages.length) { clearInterval(t); cb(); }
-    }, 350);
-  };
-
-  const handleRun = async (useSample = false) => {
-    if (!useSample && (!files.settlement || !files.ledger)) {
-      setError('Please upload at least Settlement CSV and Ledger CSV.');
-      return;
-    }
-    setLoading(true); setError('');
-    const stages = PIPELINE_STAGES.slice(0, -1);
-
-    try {
-      let data;
-      if (useSample) {
-        animate(stages, async () => {});
-        data = await reconcileSample();
-      } else {
-        animate(stages, async () => {});
-        data = await reconcileFiles(files.settlement, files.ledger, files.bank);
-      }
-      setStage('Complete ✓');
-      setTimeout(() => {
-        setResults(data);
-        if (data.run_id) setRunId(data.run_id);
-        setLoading(false);
-        setStage('');
-        setShowUpload(false); // Collapse upload section — results dominate now
-      }, 800);
-    } catch (err) {
-      console.error(err);
-      setError('Reconciliation failed. Is the backend running? (uvicorn api.main:app --reload)');
-      setLoading(false);
-      setStage('');
-    }
-  };
-
   const [comparison, setComparison] = useState(null);
   const [compLoading, setCompLoading] = useState(false);
 
-  // Auto-fetch comparison whenever a run completes
+  // Data Source Tab State
+  const [sourceTab, setSourceTab] = useState('csv'); // 'csv' or 'api'
+  const [apiStatus, setApiStatus] = useState(null);
+  const [noSettlements, setNoSettlements] = useState(null); // honest empty-state message from Razorpay sync
+
   useEffect(() => {
     if (!results) return;
     setCompLoading(true);
@@ -167,143 +120,203 @@ export default function Dashboard({ results, setResults, runId, setRunId }) {
       .finally(() => setCompLoading(false));
   }, [results]);
 
+  useEffect(() => {
+    if (sourceTab === 'api' && !apiStatus) {
+      getRazorpayStatus().then(setApiStatus).catch(() => {});
+    }
+  }, [sourceTab, apiStatus]);
+
+  const animate = (stages, cb) => {
+    let i = 0;
+    const t = setInterval(() => {
+      setStage(stages[i]);
+      i++;
+      if (i >= stages.length) { clearInterval(t); cb(); }
+    }, 380);
+  };
+
+  const setFile = (key, file) => {
+    setFiles(p => ({ ...p, [key]: file }));
+    setFileErrors(p => ({ ...p, [key]: validateCsv(file) }));
+  };
+
+  const handleRun = async (useSample = false) => {
+    setError(''); setNoSettlements(null);
+
+    if (sourceTab === 'csv' && !useSample) {
+      const errs = {
+        settlement: validateCsv(files.settlement) || (!files.settlement ? 'Required.' : null),
+        ledger: validateCsv(files.ledger) || (!files.ledger ? 'Required.' : null),
+        bank: validateCsv(files.bank),
+      };
+      setFileErrors(errs);
+      if (errs.settlement || errs.ledger || errs.bank) {
+        setError('Fix the highlighted files before running.');
+        return;
+      }
+    }
+
+    setLoading(true);
+    const stages = PIPELINE_STAGES.slice(0, -1);
+    try {
+      let data;
+      if (sourceTab === 'api') {
+        animate(stages, () => {});
+        data = await syncRazorpay();
+        if (data.status === 'no_settlements') {
+          setNoSettlements(data.razorpay_message);
+          setLoading(false); setStage('');
+          return;
+        }
+      } else {
+        if (useSample) { animate(stages, () => {}); data = await reconcileSample(); }
+        else { animate(stages, () => {}); data = await reconcileFiles(files.settlement, files.ledger, files.bank); }
+      }
+      setStage('Done');
+      setTimeout(() => {
+        setResults(data);
+        if (data.run_id) setRunId(data.run_id);
+        setLoading(false); setStage('');
+        setShowUpload(false);
+      }, 600);
+    } catch (err) {
+      setError(err.message || 'Reconciliation failed. Is the backend running?');
+      setLoading(false); setStage('');
+    }
+  };
+
   const kpi = results?.kpi;
+
   const pieData = kpi ? [
     { name: 'Auto-Matched', value: kpi.auto_matched || 0 },
     { name: 'Human Review', value: kpi.human_review || 0 },
     { name: 'Unresolved',   value: kpi.unresolved   || 0 },
   ] : [];
 
-  // Build amount-band bar from matches
   const bandData = results?.matches ? (() => {
-    const bands = { '₹0–1K': 0, '₹1K–25K': 0, '₹25K–1L': 0, '₹1L+': 0 };
+    const b = { '< ₹1K': 0, '₹1K–25K': 0, '₹25K–1L': 0, '> ₹1L': 0 };
     results.matches.forEach(m => {
       const r = (m.amount_paise || 0) / 100;
-      if (r < 1000) bands['₹0–1K']++;
-      else if (r < 25000) bands['₹1K–25K']++;
-      else if (r < 100000) bands['₹25K–1L']++;
-      else bands['₹1L+']++;
+      if (r < 1000)        b['< ₹1K']++;
+      else if (r < 25000)  b['₹1K–25K']++;
+      else if (r < 100000) b['₹25K–1L']++;
+      else                 b['> ₹1L']++;
     });
-    return Object.entries(bands).map(([name, count]) => ({ name, count }));
+    return Object.entries(b).map(([name, count]) => ({ name, count }));
   })() : [];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            ReconQ — AI Finance Controller
+          <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: -0.4 }}>
+            Finance Controller
           </h1>
-          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            3-way risk-weighted reconciliation · Gateway × Bank × Ledger · Powered by Gemini
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+            Built for Razorpay Merchants · Automated Settlement Reconciler for ERP Ledgers (Tally, SAP, Zoho)
           </p>
         </div>
         {results && (
-          <span className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
-            <Activity size={12} /> Live Results
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--accent-green)', background: 'var(--accent-green-light)', padding: '5px 10px', borderRadius: 6, border: '1px solid #bbf7d0' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-green)' }} />
+            Results ready
+          </div>
         )}
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════
-          COMPARISON BANNER — THE OPENING ACT
-          "The naive 85% policy would have auto-cleared ₹X wrongly."
-          This is the measurable claim. It runs on the same dataset,
-          same ML model, only the decision policy differs.
-      ═══════════════════════════════════════════════════════════════ */}
-      {(comparison || compLoading) && (
-        <div className="rounded-xl border-2 overflow-hidden" style={{ borderColor: '#3b82f6', background: 'rgba(59,130,246,0.04)' }}>
-          <div className="px-5 py-3 flex items-center justify-between" style={{ background: 'rgba(59,130,246,0.1)' }}>
-            <div className="flex items-center gap-2">
-              <TrendingUp size={16} style={{ color: '#3b82f6' }} />
-              <span className="text-sm font-bold" style={{ color: '#3b82f6' }}>
-                Naive Baseline vs. Risk-Weighted Policy — Live Comparison
-              </span>
-            </div>
-            <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: 'rgba(59,130,246,0.2)', color: '#3b82f6' }}>
-              Same ML model · Same data · Different decision policy
-            </span>
+      {/* Ledger disclosure for Razorpay live path */}
+      {results?.razorpay_source === 'razorpay_live' && results?.ledger_message && (
+        <Card padding="12px 16px" style={{ background: 'var(--accent-blue-light)', border: '1px solid #bfdbfe' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <Info size={15} color="var(--accent-blue)" style={{ flexShrink: 0, marginTop: 1 }} />
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--accent-blue)' }}>Live Razorpay settlements, synthetic ledger:</strong> {results.ledger_message}
+            </p>
           </div>
+        </Card>
+      )}
+
+      {/* Comparison banner */}
+      {(comparison || compLoading) && (
+        <Card padding="18px 20px">
+          <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Naive Baseline vs Risk-Weighted — Same model, same data
+          </p>
 
           {compLoading ? (
-            <div className="px-5 py-8 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Running comparison…
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <SkeletonBlock height={64} radius={8} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <SkeletonBlock height={90} radius={8} />
+                <SkeletonBlock height={90} radius={8} />
+              </div>
             </div>
           ) : comparison && (
-            <div className="p-5 space-y-4">
-              {/* Headline number */}
-              <div className="rounded-lg p-4 text-center" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                <p className="text-3xl font-black font-mono" style={{ color: '#ef4444' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Hero number */}
+              <div style={{ padding: '14px 16px', background: 'var(--accent-red-light)', borderRadius: 8, border: '1px solid #fecaca' }}>
+                <p style={{ margin: 0, fontSize: 26, fontWeight: 700, color: 'var(--accent-red)', letterSpacing: -0.5 }}>
                   ₹{comparison.headline.rupees_naive_would_clear_wrong.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </p>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  the naive 85% policy would have auto-cleared wrongly across{' '}
-                  <strong style={{ color: 'var(--text-primary)' }}>{comparison.headline.transactions_caught} high-value transactions</strong>
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
-                  risk-weighted policy correctly routed all of them to human review
+                <p style={{ margin: '5px 0 0', fontSize: 13, color: '#7f1d1d' }}>
+                  the flat 85% threshold would have auto-cleared across{' '}
+                  <strong>{comparison.headline.transactions_caught} transactions</strong>.
+                  Risk-weighted policy caught all of them.
                 </p>
               </div>
 
-              {/* Side-by-side policy boxes */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg p-3 border" style={{ borderColor: '#ef4444', background: 'rgba(239,68,68,0.05)' }}>
-                  <p className="text-xs font-bold mb-2" style={{ color: '#ef4444' }}>
-                    NAIVE — Flat {Math.round(comparison.naive_policy.threshold * 100)}% Threshold
-                  </p>
-                  <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{comparison.naive_policy.description}</p>
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between text-xs"><span style={{ color: 'var(--text-secondary)' }}>Auto-cleared</span><span className="font-bold" style={{ color: '#ef4444' }}>{comparison.naive_policy.auto_matched}</span></div>
-                    <div className="flex justify-between text-xs"><span style={{ color: 'var(--text-secondary)' }}>In review</span><span className="font-mono">{comparison.naive_policy.human_review}</span></div>
-                    <div className="flex justify-between text-xs font-bold border-t pt-1 mt-1" style={{ borderColor: 'var(--border)' }}>
+              {/* Policy comparison */}
+              <div className="rq-chart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'Flat 85% Threshold (Naive)', data: comparison.naive_policy, borderColor: '#fca5a5', bg: '#fff7f7', valueColor: 'var(--accent-red)' },
+                  { label: 'Risk-Weighted (ReconQ)', data: comparison.risk_weighted_policy, borderColor: '#86efac', bg: 'var(--accent-green-light)', valueColor: 'var(--accent-green)' },
+                ].map(({ label, data, borderColor, bg, valueColor }) => (
+                  <div key={label} style={{ padding: '12px 14px', background: bg, border: `1px solid ${borderColor}`, borderRadius: 8 }}>
+                    <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</p>
+                    {[
+                      ['Auto-cleared', data.auto_matched],
+                      ['In review', data.human_review],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>{k}</span>
+                        <span style={{ fontWeight: 600, color: valueColor }}>{v}</span>
+                      </div>
+                    ))}
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 4, display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Total auto-cleared</span>
-                      <span style={{ color: '#ef4444' }}>₹{(comparison.naive_policy.total_auto_cleared_rupees / 100000).toFixed(2)}L</span>
+                      <span style={{ fontWeight: 700, color: valueColor }}>
+                        ₹{(data.total_auto_cleared_rupees / 100000).toFixed(2)}L
+                      </span>
                     </div>
                   </div>
-                </div>
-
-                <div className="rounded-lg p-3 border" style={{ borderColor: '#10b981', background: 'rgba(16,185,129,0.05)' }}>
-                  <p className="text-xs font-bold mb-2" style={{ color: '#10b981' }}>
-                    RISK-WEIGHTED — Amount-Banded
-                  </p>
-                  <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{comparison.risk_weighted_policy.description}</p>
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between text-xs"><span style={{ color: 'var(--text-secondary)' }}>Auto-cleared</span><span className="font-bold" style={{ color: '#10b981' }}>{comparison.risk_weighted_policy.auto_matched}</span></div>
-                    <div className="flex justify-between text-xs"><span style={{ color: 'var(--text-secondary)' }}>Sent to review</span><span className="font-mono">{comparison.risk_weighted_policy.human_review}</span></div>
-                    <div className="flex justify-between text-xs font-bold border-t pt-1 mt-1" style={{ borderColor: 'var(--border)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Total auto-cleared</span>
-                      <span style={{ color: '#10b981' }}>₹{(comparison.risk_weighted_policy.total_auto_cleared_rupees / 100000).toFixed(2)}L</span>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
 
-              {/* Caught transactions table */}
+              {/* Caught table */}
               {comparison.caught_transactions?.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
-                    Transactions naive cleared wrong (top {Math.min(5, comparison.caught_transactions.length)}):
+                  <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    Transactions caught by risk policy (top {Math.min(5, comparison.caught_transactions.length)})
                   </p>
-                  <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
-                    <table className="w-full text-left text-xs">
-                      <thead style={{ background: 'var(--bg-secondary)' }}>
-                        <tr>
-                          <th className="px-3 py-2" style={{ color: 'var(--text-secondary)' }}>Settlement ID</th>
-                          <th className="px-3 py-2" style={{ color: 'var(--text-secondary)' }}>Amount</th>
-                          <th className="px-3 py-2" style={{ color: 'var(--text-secondary)' }}>ML Confidence</th>
-                          <th className="px-3 py-2" style={{ color: '#ef4444' }}>Naive said</th>
-                          <th className="px-3 py-2" style={{ color: '#10b981' }}>We said</th>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}>
+                          {['Settlement ID', 'Amount', 'Confidence', 'Naive', 'Risk Policy'].map(h => (
+                            <th key={h} style={{ textAlign: 'left', padding: '7px 10px', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{h}</th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody>
                         {comparison.caught_transactions.slice(0, 5).map((t, i) => (
-                          <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
-                            <td className="px-3 py-2 font-mono" style={{ color: 'var(--text-primary)' }}>{t.settlement_id}</td>
-                            <td className="px-3 py-2 font-mono font-bold" style={{ color: 'var(--text-primary)' }}>₹{t.amount_rupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
-                            <td className="px-3 py-2 font-mono" style={{ color: 'var(--text-secondary)' }}>{(t.confidence * 100).toFixed(1)}%</td>
-                            <td className="px-3 py-2 font-bold" style={{ color: '#ef4444' }}>AUTO_MATCHED ✗</td>
-                            <td className="px-3 py-2 font-bold" style={{ color: '#10b981' }}>HUMAN_REVIEW ✓</td>
+                          <tr key={i} className="rq-row" style={{ borderTop: '1px solid var(--border-light)' }}>
+                            <td style={{ padding: '7px 10px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-primary)' }}>{t.settlement_id}</td>
+                            <td style={{ padding: '7px 10px', fontWeight: 600, color: 'var(--text-primary)' }}>₹{t.amount_rupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                            <td style={{ padding: '7px 10px', color: 'var(--text-secondary)' }}>{(t.confidence * 100).toFixed(1)}%</td>
+                            <td style={{ padding: '7px 10px', color: 'var(--accent-red)', fontWeight: 600 }}>Cleared</td>
+                            <td style={{ padding: '7px 10px', color: 'var(--accent-green)', fontWeight: 600 }}>Review</td>
                           </tr>
                         ))}
                       </tbody>
@@ -313,211 +326,237 @@ export default function Dashboard({ results, setResults, runId, setRunId }) {
               )}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
-      {/* Upload / Run Section — collapses after successful run */}
+      {/* Upload / collapsed nav */}
       {showUpload ? (
-        <div className="rounded-xl border p-6 space-y-5" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <Database size={16} style={{ color: 'var(--accent-blue)' }} />
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Upload CSV Files</span>
-            <span className="text-xs ml-auto" style={{ color: 'var(--text-secondary)' }}>Or use the built-in sample dataset →</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <UploadZone label="Settlement Report" sublabel="Gateway settlement CSV" type="settlement" file={files.settlement} onChange={f => setFiles(p => ({ ...p, settlement: f }))} />
-            <UploadZone label="Internal Ledger"   sublabel="Accounting ledger CSV" type="ledger"     file={files.ledger}     onChange={f => setFiles(p => ({ ...p, ledger: f }))} />
-            <UploadZone label="Bank Statement"     sublabel="Bank account statement" type="bank"       file={files.bank}       onChange={f => setFiles(p => ({ ...p, bank: f }))} optional />
-          </div>
-
-          {loading && <PipelineAnimation stage={stage} />}
-          {error && <p className="text-sm px-3 py-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>{error}</p>}
-
-          <div className="flex items-center gap-3 flex-wrap">
+        <Card padding={0}>
+          {/* Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)', borderTopLeftRadius: 10, borderTopRightRadius: 10 }}>
             <button
-              onClick={() => handleRun(false)}
-              disabled={loading}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all disabled:opacity-50 hover:opacity-90 active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff' }}
-            >
-              <Play size={16} fill="white" /> Run Reconciliation
+              onClick={() => setSourceTab('csv')}
+              className="rq-btn"
+              style={{
+                flex: 1, padding: '14px 20px', border: 'none', background: 'transparent', cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: sourceTab === 'csv' ? 'var(--accent-blue)' : 'var(--text-secondary)',
+                borderBottom: `2px solid ${sourceTab === 'csv' ? 'var(--accent-blue)' : 'transparent'}`,
+              }}>
+              ERP / CSV Upload
             </button>
             <button
-              onClick={() => handleRun(true)}
-              disabled={loading}
-              className="px-5 py-2.5 rounded-lg font-medium text-sm transition-all hover:bg-white/10 active:scale-95"
-              style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              ⚡ Use Sample Data
+              onClick={() => setSourceTab('api')}
+              className="rq-btn"
+              style={{
+                flex: 1, padding: '14px 20px', border: 'none', background: 'transparent', cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: sourceTab === 'api' ? 'var(--accent-blue)' : 'var(--text-secondary)',
+                borderBottom: `2px solid ${sourceTab === 'api' ? 'var(--accent-blue)' : 'transparent'}`,
+              }}>
+              Direct Razorpay API Sync
             </button>
           </div>
-        </div>
+
+          <div style={{ padding: '18px 20px' }}>
+            {sourceTab === 'csv' ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                  <Database size={14} color="var(--accent-blue)" />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Upload batch CSV files</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>or use the 154-record benchmark dataset</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+                  <UploadZone label="Settlement Report" sublabel="Gateway export CSV" file={files.settlement} error={fileErrors.settlement} onChange={f => setFile('settlement', f)} />
+                  <UploadZone label="Internal Ledger"   sublabel="Accounting ledger CSV" file={files.ledger} error={fileErrors.ledger} onChange={f => setFile('ledger', f)} />
+                  <UploadZone label="Bank Statement"    sublabel="Bank account CSV" file={files.bank} error={fileErrors.bank} onChange={f => setFile('bank', f)} optional />
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <Database size={14} color="var(--accent-blue)" />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Fetch Live Settlements via API</span>
+                </div>
+                <div style={{ background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 8, padding: '20px', textAlign: 'center', marginBottom: 14 }}>
+                  {apiStatus?.configured ? (
+                    <>
+                      <CheckCircle2 size={24} color="var(--accent-green)" style={{ margin: '0 auto 10px' }} />
+                      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        Connected to Razorpay {apiStatus.mode === 'test' ? 'Test' : 'Live'} API
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
+                        Key ID: <span style={{ fontFamily: 'monospace' }}>{apiStatus.key_id_prefix}</span>
+                      </p>
+                      <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                        Clicking Run will fetch the latest real settlements directly from Razorpay and map them against a sample ERP ledger.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud size={24} color="var(--text-muted)" style={{ margin: '0 auto 10px' }} />
+                      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>API Not Configured</p>
+                      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
+                        Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to your .env file to enable live sync.
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {noSettlements && (
+                  <Card padding="14px 16px" style={{ background: 'var(--accent-yellow-light)', border: '1px solid #fde68a', marginBottom: 14 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <Info size={15} color="var(--accent-yellow)" style={{ flexShrink: 0, marginTop: 1 }} />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{noSettlements}</p>
+                        <Button size="sm" variant="primary" icon={Zap} onClick={() => { setSourceTab('csv'); setNoSettlements(null); }}>
+                          Switch to Sample Data
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </>
+            )}
+
+            {loading && <PipelineBar stage={stage} />}
+            {error && <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--accent-red)', padding: '8px 10px', background: 'var(--accent-red-light)', borderRadius: 6 }}>{error}</p>}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <Button
+                variant="primary" size="lg" icon={Play}
+                onClick={() => handleRun(false)}
+                disabled={loading || (sourceTab === 'api' && !apiStatus?.configured)}
+              >
+                {sourceTab === 'csv' ? 'Run Reconciliation' : 'Sync & Reconcile'}
+              </Button>
+              {sourceTab === 'csv' && (
+                <Button variant="secondary" size="lg" onClick={() => handleRun(true)} disabled={loading}>
+                  Use Sample Data
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
       ) : (
-        /* Collapsed state — compact re-run bar + navigation */
-        <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={16} style={{ color: 'var(--accent-green)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Reconciliation complete — Run <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{runId?.slice(0, 8)}…</span>
-              </span>
-            </div>
-            <button
-              onClick={() => setShowUpload(true)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-white/10"
-              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-            >
-              ↻ Re-run with different data
-            </button>
-            <div className="flex items-center gap-2 ml-auto">
-              <button
-                onClick={() => navigate('/decisions')}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg font-semibold text-sm transition-all hover:opacity-90 active:scale-95"
-                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' }}
-              >
-                View All Decisions →
-              </button>
-              <button
-                onClick={() => navigate('/exceptions')}
-                className="px-4 py-2 rounded-lg font-medium text-sm"
-                style={{ border: '1px solid rgba(245,158,11,0.4)', color: '#f59e0b' }}
-              >
-                Exceptions ({kpi?.human_review || 0})
-              </button>
-              <button
-                onClick={() => navigate('/anomalies')}
-                className="px-4 py-2 rounded-lg font-medium text-sm"
-                style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444' }}
-              >
-                Anomalies ({results?.anomalies?.length || 0})
-              </button>
-            </div>
+        <Card padding="12px 16px" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <CheckCircle2 size={15} color="var(--accent-green)" />
+          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>
+            Reconciliation complete
+            <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>run {runId?.slice(0,8)}</span>
+          </span>
+          <button onClick={() => setShowUpload(true)} className="rq-btn" style={{ marginLeft: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+            <RefreshCw size={11} /> Re-run
+          </button>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <Button size="sm" variant="primary" onClick={() => navigate('/decisions')}>Decisions</Button>
+            <Button size="sm" variant="secondary" onClick={() => navigate('/exceptions')}>Exceptions ({kpi?.human_review || 0})</Button>
+            <Button size="sm" variant="secondary" onClick={() => navigate('/anomalies')}>Anomalies ({results?.anomalies?.length || 0})</Button>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* KPI Cards */}
+      {/* KPIs */}
+      {loading && !results && (
+        <>
+          <SkeletonKPIGrid count={6} />
+        </>
+      )}
       {results && kpi && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-            <KPICard title="Match Rate"      value={`${(kpi.match_rate * 100).toFixed(1)}%`}   subtitle={`${kpi.auto_matched} auto-cleared`}     icon={TrendingUp}   color="blue" />
-            <KPICard title="Auto-Cleared"    value={fmtRupees(kpi.rupees_auto_cleared)}         subtitle="Processed instantly"                      icon={CheckCircle2} color="green" />
-            <KPICard title="In Review"       value={fmtRupees(kpi.rupees_in_review)}            subtitle={`${kpi.human_review} items`}              icon={AlertCircle}  color="yellow" />
-            <KPICard title="Unresolved"      value={kpi.unresolved}                             subtitle="Need investigation"                        icon={ShieldAlert}  color="red" />
-            <KPICard title="Bank Confirmed"  value={kpi.bank_confirmed || 0}                    subtitle="3-way match"                              icon={Banknote}     color="purple" />
-            <KPICard title="Leakage Flagged" value={fmtRupees(results.leakage_report?.total_leakage_rupees || 0)} subtitle={`${results.anomalies?.length || 0} anomalies`} icon={ShieldAlert} color="red" />
+          <div className="rq-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+            <KPICard title="Match Rate"     value={`${(kpi.match_rate * 100).toFixed(1)}%`}   subtitle={`${kpi.auto_matched} auto-cleared`}    icon={TrendingUp}   color="blue" />
+            <KPICard title="Auto-Cleared"   value={fmtRupees(kpi.rupees_auto_cleared)}          subtitle="Processed instantly"                    icon={CheckCircle2} color="green" />
+            <KPICard title="In Review"      value={fmtRupees(kpi.rupees_in_review)}             subtitle={`${kpi.human_review} items`}            icon={AlertCircle}  color="yellow" />
+            <KPICard title="Unresolved"     value={kpi.unresolved}                              subtitle="Need investigation"                     icon={ShieldAlert}  color="red" />
+            <KPICard title="Bank Confirmed" value={kpi.bank_confirmed || 0}                     subtitle="3-way matched"                          icon={Banknote}     color="purple" />
+            <KPICard title="Leakage Found"  value={fmtRupees(results.leakage_report?.total_leakage_rupees || 0)} subtitle={`${results.anomalies?.length || 0} anomalies`} icon={ShieldAlert} color="red" />
           </div>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Donut */}
-            <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>STATUS DISTRIBUTION</h3>
-              <div className="h-56 flex items-center">
-                <ResponsiveContainer width="55%" height="100%">
+          <div className="rq-chart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <Card padding="18px 20px">
+              <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status Distribution</p>
+              <div style={{ height: 200, display: 'flex', alignItems: 'center' }}>
+                <ResponsiveContainer width="50%" height="100%">
                   <PieChart>
-                    <Pie data={pieData} innerRadius={55} outerRadius={75} paddingAngle={4} dataKey="value" strokeWidth={0}>
+                    <Pie data={pieData} innerRadius={50} outerRadius={70} paddingAngle={3} dataKey="value" strokeWidth={0}>
                       {pieData.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i]} />)}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                      contentStyle={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12, boxShadow: 'var(--shadow-md)' }}
                       formatter={(v, n) => [`${v} records`, n]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="space-y-3 ml-4">
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {pieData.map((d, i) => (
-                    <div key={d.name} className="flex items-center gap-2 text-sm">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: DONUT_COLORS[i] }} />
-                      <span style={{ color: 'var(--text-secondary)' }}>{d.name}</span>
-                      <span className="ml-auto font-semibold" style={{ color: 'var(--text-primary)' }}>{d.value}</span>
+                    <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i], flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', flex: 1 }}>{d.name}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{d.value}</span>
                     </div>
                   ))}
-                  <div className="pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
-                    <div className="flex justify-between text-xs">
-                      <span style={{ color: 'var(--text-secondary)' }}>Total</span>
-                      <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{kpi.total_records}</span>
-                    </div>
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Total</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{kpi.total_records}</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
 
-            {/* Bar chart */}
-            <div className="rounded-xl border p-6" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>VOLUME BY AMOUNT BAND</h3>
-              <div className="h-56">
+            <Card padding="18px 20px">
+              <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Volume by Amount Band</p>
+              <div style={{ height: 200 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={bandData} barCategoryGap="30%">
-                    <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis stroke="var(--text-secondary)" fontSize={11} tickLine={false} axisLine={false} />
+                  <BarChart data={bandData} barCategoryGap="35%">
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} tickLine={false} axisLine={false} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-                      cursor={{ fill: 'rgba(59,130,246,0.05)' }}
+                      contentStyle={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 7, fontSize: 12, boxShadow: 'var(--shadow-md)' }}
+                      cursor={{ fill: 'rgba(37,99,235,0.04)' }}
                       formatter={v => [`${v} settlements`]}
                     />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                      {bandData.map((_, i) => (
-                        <Cell key={i} fill={i === 3 ? '#ef4444' : '#3b82f6'} opacity={0.8 + i * 0.05} />
-                      ))}
+                    <Bar dataKey="count" radius={[4,4,0,0]}>
+                      {bandData.map((_, i) => <Cell key={i} fill={i === 3 ? '#dc2626' : '#2563eb'} opacity={0.7 + i * 0.08} />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
+            </Card>
           </div>
 
-          {/* Bank 3-way summary strip */}
+          {/* Bank strip */}
           {kpi.bank_confirmed > 0 && (
-            <div className="rounded-xl border p-5" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <div className="flex items-center gap-2 mb-4">
-                <Banknote size={16} style={{ color: 'var(--accent-purple)' }} />
-                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>3-Way Bank Reconciliation</span>
+            <Card padding="16px 20px">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <Banknote size={14} color="var(--accent-purple)" />
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>3-Way Bank Reconciliation</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
                 {[
-                  { label: 'Bank Confirmed',    value: kpi.bank_confirmed,   color: '#10b981' },
-                  { label: 'Bank Discrepancies',value: results.matches?.filter(m => m.status === 'BANK_DISCREPANCY').length || 0, color: '#f59e0b' },
-                  { label: 'Funds in Transit',  value: kpi.funds_in_transit, color: '#8b5cf6' },
-                  { label: 'Anomalies Detected',value: results.anomalies?.length || 0, color: '#ef4444' },
+                  { label: 'Bank Confirmed', value: kpi.bank_confirmed, color: 'var(--accent-green)' },
+                  { label: 'Discrepancies', value: results.matches?.filter(m => m.status === 'BANK_DISCREPANCY').length || 0, color: 'var(--accent-yellow)' },
+                  { label: 'Funds in Transit', value: kpi.funds_in_transit, color: 'var(--accent-purple)' },
+                  { label: 'Anomalies', value: results.anomalies?.length || 0, color: 'var(--accent-red)' },
                 ].map(({ label, value, color }) => (
-                  <div key={label} className="text-center">
-                    <div className="text-2xl font-bold" style={{ color }}>{value}</div>
-                    <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{label}</div>
+                  <div key={label} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 24, fontWeight: 700, color, letterSpacing: -0.5 }}>{value}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{label}</div>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
-
-          {/* Engineering credibility footer */}
-          <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-center gap-6 flex-wrap">
-              {[
-                { label: '39 automated tests', color: '#10b981' },
-                { label: 'Risk-weighted decisioning', color: '#3b82f6' },
-                { label: 'Immutable audit log', color: '#8b5cf6' },
-                { label: 'Numeric cross-check on AI', color: '#f59e0b' },
-                { label: 'Gemini function-calling', color: '#ec4899' },
-              ].map(({ label, color }) => (
-                <div key={label} className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </>
       )}
 
       {/* Empty state */}
       {!results && !loading && (
-        <div className="rounded-xl border border-dashed p-12 text-center" style={{ borderColor: 'var(--border)' }}>
-          <Activity size={40} className="mx-auto mb-4 opacity-30" style={{ color: 'var(--text-secondary)' }} />
-          <p className="text-lg font-semibold" style={{ color: 'var(--text-secondary)' }}>No reconciliation run yet</p>
-          <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>
-            Upload your files above or click <strong>⚡ Use Sample Data</strong> to see the dashboard in action.
-          </p>
+        <div style={{ border: '1px dashed var(--border)', borderRadius: 10 }}>
+          <EmptyState
+            icon={Activity}
+            title="No reconciliation run yet"
+            subtitle={<>Upload your CSV files above or click <strong>Use Sample Data</strong> to get started.</>}
+          />
         </div>
       )}
     </div>

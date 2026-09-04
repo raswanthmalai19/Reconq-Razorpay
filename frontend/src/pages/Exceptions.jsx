@@ -2,9 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Check, X, Info, AlertTriangle, CheckCircle, XCircle,
-  Wrench, Loader2, ShieldCheck, ShieldAlert
+  Wrench, ShieldCheck, ShieldAlert
 } from 'lucide-react';
 import { submitOverride, getSuggestedFix, approveSuggestedFix } from '../api/client';
+import Badge, { STATUS_STYLES } from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import { TextArea } from '../components/ui/Input';
+import EmptyState from '../components/ui/EmptyState';
+import { SkeletonRows } from '../components/ui/Skeleton';
 
 function formatAmount(paise) {
   if (paise == null) return '—';
@@ -28,37 +34,22 @@ function ConfidenceBar({ value }) {
   );
 }
 
-function StatusBadge({ status }) {
-  const isHR = status === 'HUMAN_REVIEW';
-  const style = {
-    fontSize: 10, fontWeight: 700, letterSpacing: '.5px', padding: '2px 8px', borderRadius: 99,
-    background: isHR ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)',
-    color: isHR ? '#f59e0b' : '#ef4444',
-    border: `1px solid ${isHR ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`,
-  };
-  return <span style={style}>{status?.replace('_', ' ')}</span>;
-}
-
 function FieldGrid({ title, data }) {
-  if (!data || typeof data !== 'object') {
-    return (
-      <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)', flex: 1 }}>
-        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.5px' }}>{title}</p>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No data available</p>
-      </div>
-    );
-  }
   return (
     <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)', flex: 1 }}>
       <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.5px' }}>{title}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {Object.entries(data).map(([k, v]) => (
-          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 110 }}>{k.replace(/_/g, ' ')}</span>
-            <span style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--text-primary)', textAlign: 'right', wordBreak: 'break-all' }}>{String(v)}</span>
-          </div>
-        ))}
-      </div>
+      {!data || typeof data !== 'object' ? (
+        <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No data available</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {Object.entries(data).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)', minWidth: 110 }}>{k.replace(/_/g, ' ')}</span>
+              <span style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--text-primary)', textAlign: 'right', wordBreak: 'break-all' }}>{String(v)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -75,23 +66,17 @@ function SuggestedFixPanel({ fix, onApprove, approveLoading, approved }) {
 
   const isNoFix = fix.adjustment_type === 'no_confident_fix';
   const crossCheckPassed = fix.validation?.cross_check_passed;
+  const tone = isNoFix ? '#f59e0b' : crossCheckPassed ? '#10b981' : '#ef4444';
 
   return (
-    <div style={{
-      borderRadius: 10, overflow: 'hidden', marginBottom: 14,
-      border: `1px solid ${isNoFix ? 'rgba(245,158,11,0.3)' : crossCheckPassed ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
-    }}>
+    <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 14, border: `1px solid ${tone}4d` }}>
       {/* Header */}
-      <div style={{
-        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8,
-        background: isNoFix ? 'rgba(245,158,11,0.08)' : crossCheckPassed ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-      }}>
-        <Wrench size={14} style={{ color: isNoFix ? '#f59e0b' : crossCheckPassed ? '#10b981' : '#ef4444' }} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: isNoFix ? '#f59e0b' : crossCheckPassed ? '#10b981' : '#ef4444' }}>
+      <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, background: `${tone}14` }}>
+        <Wrench size={14} style={{ color: tone }} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: tone }}>
           Suggested Fix — {fix.adjustment_type?.replace(/_/g, ' ').toUpperCase()}
         </span>
 
-        {/* Validation badge */}
         <span style={{
           marginLeft: 'auto', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
           display: 'flex', alignItems: 'center', gap: 4,
@@ -105,12 +90,10 @@ function SuggestedFixPanel({ fix, onApprove, approveLoading, approved }) {
 
       {/* Body */}
       <div style={{ padding: 16 }}>
-        {/* Explanation */}
         <p style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.6, marginBottom: 12 }}>
           {fix.explanation}
         </p>
 
-        {/* Affected records table */}
         {fix.affected_records?.length > 0 && (
           <div style={{ marginBottom: 12 }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>PROPOSED ADJUSTMENTS</p>
@@ -141,7 +124,6 @@ function SuggestedFixPanel({ fix, onApprove, approveLoading, approved }) {
           </div>
         )}
 
-        {/* Confidence */}
         {fix.confidence != null && !isNoFix && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Fix confidence:</span>
@@ -151,7 +133,6 @@ function SuggestedFixPanel({ fix, onApprove, approveLoading, approved }) {
           </div>
         )}
 
-        {/* Human next step */}
         {fix.human_next_step && (
           <div style={{
             padding: '10px 14px', borderRadius: 8, fontSize: 11, lineHeight: 1.5,
@@ -162,7 +143,6 @@ function SuggestedFixPanel({ fix, onApprove, approveLoading, approved }) {
           </div>
         )}
 
-        {/* Approve button — only if cross-check passed and not "no_confident_fix" */}
         {!isNoFix && crossCheckPassed && (
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {approved ? (
@@ -176,21 +156,9 @@ function SuggestedFixPanel({ fix, onApprove, approveLoading, approved }) {
                 </span>
               </div>
             ) : (
-              <button
-                onClick={onApprove}
-                disabled={approveLoading}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '10px 20px', borderRadius: 8, fontWeight: 700, fontSize: 13,
-                  cursor: approveLoading ? 'not-allowed' : 'pointer',
-                  background: 'rgba(16,185,129,0.1)', color: '#10b981',
-                  border: '1px solid rgba(16,185,129,0.3)',
-                  opacity: approveLoading ? 0.6 : 1,
-                }}
-              >
-                <Check size={15} />
+              <Button variant="success" size="lg" icon={Check} loading={approveLoading} onClick={onApprove}>
                 {approveLoading ? 'Logging…' : 'Approve Fix'}
-              </button>
+              </Button>
             )}
             <p style={{ fontSize: 9, color: 'var(--text-secondary)', opacity: 0.6, textAlign: 'center' }}>
               Approving logs this internally — nothing is sent externally. To apply this fix, your finance team reviews the audit log and executes through your own ledger system.
@@ -270,23 +238,23 @@ export default function Exceptions({ results, runId }) {
 
   if (!results) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 320, gap: 16 }}>
-        <AlertTriangle size={40} style={{ color: 'var(--text-secondary)', opacity: 0.4 }} />
-        <p style={{ fontSize: 17, color: 'var(--text-secondary)' }}>Run reconciliation first</p>
-        <button onClick={() => navigate('/')} style={{ padding: '8px 20px', borderRadius: 8, background: 'var(--accent-blue)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-          ← Go to Dashboard
-        </button>
-      </div>
+      <EmptyState
+        icon={AlertTriangle}
+        title="Run reconciliation first"
+        actionLabel="Go to Dashboard"
+        onAction={() => navigate('/')}
+      />
     );
   }
 
   if (exceptions.length === 0) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 320, gap: 12 }}>
-        <CheckCircle size={48} style={{ color: 'var(--accent-green)' }} />
-        <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>All transactions auto-matched!</p>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No human review required for this run.</p>
-      </div>
+      <EmptyState
+        icon={CheckCircle}
+        tone="success"
+        title="All transactions auto-matched!"
+        subtitle="No human review required for this run."
+      />
     );
   }
 
@@ -354,7 +322,7 @@ export default function Exceptions({ results, runId }) {
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                   <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{exc.settlement_id}</span>
-                  <StatusBadge status={exc.status} />
+                  <Badge label={exc.status} styleMap={STATUS_STYLES} size="sm" />
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8 }}>
                   {exc.invoice_id} · {exc.match_type} · {formatAmount(exc.amount_paise)}
@@ -367,15 +335,15 @@ export default function Exceptions({ results, runId }) {
       </div>
 
       {/* RIGHT PANEL — detail + suggested fix */}
-      <div style={{ flex: 1, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-card)', padding: 24, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+      <Card style={{ flex: 1, borderRadius: 12, padding: 24, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
         {selected ? (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 0 }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 8 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <h2 style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-primary)' }}>{selected.settlement_id}</h2>
-                  <StatusBadge status={selected.status} />
+                  <Badge label={selected.status} styleMap={STATUS_STYLES} />
                 </div>
                 <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 3 }}>
                   Invoice: <span style={{ fontFamily: 'monospace' }}>{selected.invoice_id}</span>
@@ -403,7 +371,7 @@ export default function Exceptions({ results, runId }) {
             </div>
 
             {/* Two-column record view */}
-            <div style={{ display: 'flex', gap: 14, marginBottom: 18, flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: 14, marginBottom: 18, flexShrink: 0, flexWrap: 'wrap' }}>
               <FieldGrid
                 title="Settlement Record"
                 data={{
@@ -428,11 +396,7 @@ export default function Exceptions({ results, runId }) {
               />
             </div>
 
-            {/* ═══════════════════════════════════════════════════════
-                SUGGESTED FIX — inline panel, not a modal
-                The "Get Suggested Fix" button triggers the LLM call.
-                Results appear inline below the record view.
-            ═══════════════════════════════════════════════════════ */}
+            {/* SUGGESTED FIX — inline panel, not a modal */}
             {currentFix ? (
               <SuggestedFixPanel
                 fix={currentFix}
@@ -440,38 +404,22 @@ export default function Exceptions({ results, runId }) {
                 approveLoading={approveLoading}
                 approved={currentApproved}
               />
+            ) : fixLoading ? (
+              <div style={{ marginBottom: 14 }}><SkeletonRows rows={2} cols={4} /></div>
             ) : (
-              <button
-                onClick={handleGetFix}
-                disabled={fixLoading}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '10px 20px', borderRadius: 8, fontWeight: 700, fontSize: 13,
-                  cursor: fixLoading ? 'not-allowed' : 'pointer', marginBottom: 14,
-                  background: 'rgba(139,92,246,0.08)', color: '#8b5cf6',
-                  border: '1px solid rgba(139,92,246,0.25)',
-                  opacity: fixLoading ? 0.6 : 1,
-                }}
-              >
-                {fixLoading ? <Loader2 size={15} className="animate-spin" /> : <Wrench size={15} />}
-                {fixLoading ? 'Generating fix proposal…' : 'Get Suggested Fix'}
-              </button>
+              <Button variant="purple" size="lg" icon={Wrench} onClick={handleGetFix} style={{ marginBottom: 14, alignSelf: 'flex-start' }}>
+                Get Suggested Fix
+              </Button>
             )}
 
             {/* Notes */}
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>REVIEWER NOTES</label>
-              <textarea
+              <TextArea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Add notes about your decision (optional)…"
                 rows={3}
-                style={{
-                  width: '100%', borderRadius: 8, border: '1px solid var(--border)',
-                  background: 'var(--bg-secondary)', color: 'var(--text-primary)',
-                  padding: '10px 12px', fontSize: 13, resize: 'vertical',
-                  boxSizing: 'border-box', outline: 'none',
-                }}
               />
             </div>
 
@@ -495,34 +443,12 @@ export default function Exceptions({ results, runId }) {
 
             {/* Accept / Reject buttons */}
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 'auto' }}>
-              <button
-                onClick={() => handleAction('REJECT')}
-                disabled={loading || !!override}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px',
-                  borderRadius: 8, fontWeight: 700, fontSize: 13,
-                  cursor: loading || override ? 'not-allowed' : 'pointer',
-                  background: 'rgba(239,68,68,0.1)', color: '#ef4444',
-                  border: '1px solid rgba(239,68,68,0.3)',
-                  opacity: loading || override ? 0.55 : 1, transition: 'all .15s',
-                }}
-              >
-                <X size={15} /> Mark Unresolved
-              </button>
-              <button
-                onClick={() => handleAction('ACCEPT')}
-                disabled={loading || !!override}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px',
-                  borderRadius: 8, fontWeight: 700, fontSize: 13,
-                  cursor: loading || override ? 'not-allowed' : 'pointer',
-                  background: 'rgba(16,185,129,0.1)', color: '#10b981',
-                  border: '1px solid rgba(16,185,129,0.3)',
-                  opacity: loading || override ? 0.55 : 1, transition: 'all .15s',
-                }}
-              >
-                <Check size={15} /> {loading ? 'Submitting…' : 'Accept Match'}
-              </button>
+              <Button variant="danger" size="lg" icon={X} disabled={loading || !!override} onClick={() => handleAction('REJECT')}>
+                Mark Unresolved
+              </Button>
+              <Button variant="success" size="lg" icon={Check} loading={loading} disabled={!!override} onClick={() => handleAction('ACCEPT')}>
+                {loading ? 'Submitting…' : 'Accept Match'}
+              </Button>
             </div>
           </div>
         ) : (
@@ -531,7 +457,7 @@ export default function Exceptions({ results, runId }) {
             <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Select an exception from the queue to review</p>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

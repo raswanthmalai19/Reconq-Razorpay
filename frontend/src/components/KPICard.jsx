@@ -1,19 +1,30 @@
+import Card from './ui/Card';
+
+const COLORS = {
+  blue:   { icon: '#2563eb', bg: '#eff6ff' },
+  green:  { icon: '#16a34a', bg: '#f0fdf4' },
+  red:    { icon: '#dc2626', bg: '#fef2f2' },
+  yellow: { icon: '#ca8a04', bg: '#fefce8' },
+  purple: { icon: '#7c3aed', bg: '#f5f3ff' },
+};
+
 export default function KPICard({ title, value, subtitle, icon: Icon, color = 'blue' }) {
-  const colors = {
-    blue: 'from-blue-500/20 to-blue-600/5 border-blue-500/30',
-    green: 'from-emerald-500/20 to-emerald-600/5 border-emerald-500/30',
-    red: 'from-red-500/20 to-red-600/5 border-red-500/30',
-    yellow: 'from-amber-500/20 to-amber-600/5 border-amber-500/30',
-    purple: 'from-purple-500/20 to-purple-600/5 border-purple-500/30',
-  };
+  const c = COLORS[color] || COLORS.blue;
+
   return (
-    <div className={`bg-gradient-to-br ${colors[color]} backdrop-blur-sm border rounded-xl p-5 transition-all hover:scale-[1.02]`}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium" style={{color: 'var(--text-secondary)'}}>{title}</span>
-        {Icon && <Icon size={20} style={{color: `var(--accent-${color})`}} />}
+    <Card hover padding="16px 18px">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {title}
+        </span>
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon size={14} color={c.icon} />
+        </div>
       </div>
-      <div className="text-2xl font-bold" style={{color: 'var(--text-primary)'}}>{value}</div>
-      {subtitle && <div className="text-xs mt-1" style={{color: 'var(--text-secondary)'}}>{subtitle}</div>}
-    </div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: -0.5 }}>{value}</div>
+      {subtitle && (
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{subtitle}</div>
+      )}
+    </Card>
   );
 }

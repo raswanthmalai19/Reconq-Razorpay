@@ -1,49 +1,52 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles, RotateCcw, Bot, User, Database } from 'lucide-react';
+import { X, Send, RefreshCw, Bot, User, MessageSquare } from 'lucide-react';
 import { sendCopilotMessage } from '../api/client';
 import ReactMarkdown from 'react-markdown';
-
-const WELCOME = `**Welcome to ReconQ Copilot** — your AI finance analyst.
-
-I can query your actual reconciliation data using Gemini function-calling. Try asking:`;
+import remarkGfm from 'remark-gfm';
 
 const SUGGESTIONS = [
-  { label: '📊 Match rate summary', text: "What's my overall match rate and how many transactions were auto-cleared?" },
-  { label: '🔍 Unresolved items', text: 'Show me all unresolved transactions with their amounts' },
-  { label: '💰 Fee analysis', text: 'Analyze my fee patterns — are there any overcharges?' },
-  { label: '⚠️ Leakage report', text: 'How much revenue leakage was detected and what types?' },
-  { label: '🏦 Bank reconciliation', text: 'How many settlements were confirmed by the bank vs. still in transit?' },
-  { label: '📋 High-value review', text: 'Show me human-review items above ₹1 lakh' },
+  "What's my overall match rate?",
+  "Show me unresolved transactions",
+  "How much revenue leakage was detected?",
+  "Analyze my fee patterns",
+  "Show human review items above ₹50,000",
+  "What's confirmed by the bank?",
 ];
 
-/* ── Markdown-rendered message bubble ─────────────────────────────── */
+const WELCOME = `Hello. I'm ReconQ Copilot, powered by Gemini (with Groq fallback).
+
+Ask me anything about your reconciliation data — I query your actual results, not guesses.`;
+
 function MsgBubble({ role, text }) {
   const isUser = role === 'user';
   return (
-    <div style={{
-      display: 'flex', gap: 10, alignItems: 'flex-start',
-      flexDirection: isUser ? 'row-reverse' : 'row',
-    }}>
+    <div className="rq-fade-in" style={{ display: 'flex', gap: 9, alignItems: 'flex-start', flexDirection: isUser ? 'row-reverse' : 'row' }}>
       <div style={{
-        width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        background: isUser ? 'var(--accent-blue)' : 'rgba(139,92,246,0.2)',
+        width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: isUser ? 'var(--accent-blue)' : '#f4f4f5',
+        border: isUser ? 'none' : '1px solid var(--border)',
       }}>
-        {isUser ? <User size={14} color="#fff" /> : <Bot size={14} color="#8b5cf6" />}
+        {isUser
+          ? <User size={12} color="#fff" />
+          : <Bot size={12} color="var(--text-secondary)" />
+        }
       </div>
       <div style={{
-        maxWidth: '85%', padding: '10px 14px', borderRadius: 12,
-        background: isUser ? 'var(--accent-blue)' : 'var(--bg-card)',
+        maxWidth: '86%',
+        padding: '9px 13px',
+        borderRadius: 10,
+        background: isUser ? 'var(--accent-blue)' : '#ffffff',
         border: isUser ? 'none' : '1px solid var(--border)',
         color: isUser ? '#fff' : 'var(--text-primary)',
-        fontSize: 13, lineHeight: 1.65,
+        fontSize: 13,
+        lineHeight: 1.6,
+        boxShadow: 'var(--shadow-sm)',
       }}>
-        {isUser ? (
-          <span>{text}</span>
-        ) : (
-          <div className="copilot-markdown">
-            <ReactMarkdown>{text}</ReactMarkdown>
-          </div>
-        )}
+        {isUser
+          ? <span>{text}</span>
+          : <div className="copilot-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown></div>
+        }
       </div>
     </div>
   );
@@ -61,9 +64,8 @@ export default function Copilot({ runId, onClose }) {
   }, [messages, loading]);
 
   const send = async (msg) => {
-    if (!msg.trim()) return;
-    const userMsg = { role: 'user', text: msg.trim() };
-    setMessages(prev => [...prev, userMsg]);
+    if (!msg.trim() || loading) return;
+    setMessages(prev => [...prev, { role: 'user', text: msg.trim() }]);
     setInput('');
     setLoading(true);
     setShowSuggestions(false);
@@ -71,7 +73,7 @@ export default function Copilot({ runId, onClose }) {
       const res = await sendCopilotMessage(msg, runId || 'default');
       setMessages(prev => [...prev, { role: 'assistant', text: res.reply }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', text: `**Error:** ${err.message}. Is the backend running?` }]);
+      setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}. Is the backend running?` }]);
     } finally {
       setLoading(false);
     }
@@ -80,74 +82,57 @@ export default function Copilot({ runId, onClose }) {
   const reset = async () => {
     setMessages([{ role: 'assistant', text: WELCOME }]);
     setShowSuggestions(true);
-    // Actually reset the backend chat session
     try {
       const axios = (await import('axios')).default;
       await axios.post(`/api/copilot/reset/${runId || 'default'}`);
-    } catch { /* silent — reset is best-effort */ }
+    } catch { /* silent */ }
   };
 
   return (
-    <div style={{
-      width: 400, height: '100vh', flexShrink: 0,
+    <div className="rq-copilot" style={{
+      width: 380, height: '100vh', flexShrink: 0,
       borderLeft: '1px solid var(--border)',
-      background: 'var(--bg-secondary)',
+      background: 'var(--bg-subtle)',
       display: 'flex', flexDirection: 'column',
+      boxShadow: 'var(--shadow-lg)',
     }}>
-      {/* ── Header ────────────────────────────────────────────────── */}
+      {/* Header */}
       <div style={{
-        padding: '14px 18px', borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '13px 16px',
+        borderBottom: '1px solid var(--border)',
+        background: '#fff',
+        display: 'flex', alignItems: 'center', gap: 9,
       }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 10,
-          background: 'rgba(139,92,246,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Sparkles size={16} color="#8b5cf6" />
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--accent-blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <MessageSquare size={14} color="var(--accent-blue)" />
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>ReconQ Copilot</div>
-          <div style={{ fontSize: 10, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Database size={9} />
-            {runId ? `Run: ${runId.slice(0, 8)}…` : 'No active run'} · Gemini function-calling
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Copilot</div>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+            {runId ? `Run ${runId.slice(0,8)}` : 'No run'} · Gemini + Groq fallback
           </div>
         </div>
-        <button onClick={reset} title="Reset chat" style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)',
-        }}>
-          <RotateCcw size={15} />
+        <button onClick={reset} title="Reset conversation" className="rq-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, borderRadius: 5 }}>
+          <RefreshCw size={13} />
         </button>
-        <button onClick={onClose} style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)',
-        }}>
-          <X size={16} />
+        <button onClick={onClose} className="rq-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, borderRadius: 5 }}>
+          <X size={15} />
         </button>
       </div>
 
-      {/* ── Messages ──────────────────────────────────────────────── */}
-      <div style={{
-        flex: 1, overflowY: 'auto', padding: '16px 14px',
-        display: 'flex', flexDirection: 'column', gap: 14,
-      }}>
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {messages.map((m, i) => <MsgBubble key={i} role={m.role} text={m.text} />)}
 
         {loading && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px' }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(139,92,246,0.2)',
-            }}>
-              <Bot size={14} color="#8b5cf6" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 6, background: '#f4f4f5', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bot size={12} color="var(--text-secondary)" />
             </div>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Querying your data</span>
-              {[0, 1, 2].map(i => (
-                <div key={i} style={{
-                  width: 5, height: 5, borderRadius: '50%', background: '#8b5cf6',
-                  animation: 'bounce 0.6s infinite alternate',
-                  animationDelay: `${i * 0.15}s`,
-                }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', background: '#fff', border: '1px solid var(--border)', borderRadius: 10, boxShadow: 'var(--shadow-sm)' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Querying data</span>
+              {[0,1,2].map(i => (
+                <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--accent-blue)', opacity: 0.7, animation: 'bounce 0.5s infinite alternate', animationDelay: `${i * 0.15}s` }} />
               ))}
             </div>
           </div>
@@ -156,64 +141,52 @@ export default function Copilot({ runId, onClose }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Suggestion chips ──────────────────────────────────────── */}
+      {/* Suggestion chips */}
       {showSuggestions && (
-        <div style={{
-          padding: '0 14px 10px', display: 'flex', flexWrap: 'wrap', gap: 6,
-        }}>
+        <div style={{ padding: '0 12px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4, paddingLeft: 2 }}>Suggested questions</div>
           {SUGGESTIONS.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => send(s.text)}
-              style={{
-                fontSize: 11, padding: '5px 10px', borderRadius: 8,
-                background: 'rgba(139,92,246,0.08)', color: '#8b5cf6',
-                border: '1px solid rgba(139,92,246,0.2)',
-                cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap',
-                transition: 'all .15s',
-              }}
-              onMouseEnter={e => e.target.style.background = 'rgba(139,92,246,0.18)'}
-              onMouseLeave={e => e.target.style.background = 'rgba(139,92,246,0.08)'}
-            >
-              {s.label}
+            <button key={i} onClick={() => send(s)} className="rq-chip" style={{
+              textAlign: 'left', fontSize: 12, padding: '6px 10px', borderRadius: 7,
+              background: '#fff', color: 'var(--text-secondary)',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+            }}>
+              {s}
             </button>
           ))}
         </div>
       )}
 
-      {/* ── Input bar ─────────────────────────────────────────────── */}
-      <div style={{
-        padding: '10px 14px', borderTop: '1px solid var(--border)',
-        display: 'flex', gap: 8, alignItems: 'flex-end',
-      }}>
+      {/* Input */}
+      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--border)', background: '#fff', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
         <textarea
           value={input}
           onChange={e => setInput(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); }
-          }}
-          placeholder="Ask about your reconciliation data…"
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
+          placeholder="Ask about your data..."
           rows={1}
           style={{
-            flex: 1, padding: '9px 12px', borderRadius: 10,
-            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            flex: 1, padding: '8px 11px', borderRadius: 8,
+            background: 'var(--bg-subtle)', border: '1px solid var(--border)',
             color: 'var(--text-primary)', fontSize: 13, resize: 'none',
-            maxHeight: 100, outline: 'none', lineHeight: 1.5,
+            maxHeight: 100, outline: 'none', lineHeight: 1.5, fontFamily: 'inherit',
           }}
         />
         <button
           onClick={() => send(input)}
           disabled={!input.trim() || loading}
+          className="rq-btn"
           style={{
-            width: 36, height: 36, borderRadius: 10, border: 'none',
-            background: input.trim() && !loading ? 'var(--accent-blue)' : 'var(--bg-card)',
-            color: input.trim() && !loading ? '#fff' : 'var(--text-secondary)',
+            width: 34, height: 34, borderRadius: 8,
+            border: 'none',
+            background: input.trim() && !loading ? 'var(--accent-blue)' : '#f4f4f5',
+            color: input.trim() && !loading ? '#fff' : 'var(--text-muted)',
             cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all .15s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}
         >
-          <Send size={15} />
+          <Send size={14} />
         </button>
       </div>
     </div>

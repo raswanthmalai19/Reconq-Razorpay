@@ -16,6 +16,17 @@ export const reconcileSample = async () => {
   return data;
 };
 
+export const syncRazorpay = async () => {
+  const { data } = await api.post('/razorpay/sync');
+  if (data.error) throw new Error(data.error);
+  return data;
+};
+
+export const getRazorpayStatus = async () => {
+  const { data } = await api.get('/razorpay/status');
+  return data;
+};
+
 export const getComparison = async (settlementFile = null, ledgerFile = null) => {
   const form = new FormData();
   if (settlementFile) form.append('settlement', settlementFile);
