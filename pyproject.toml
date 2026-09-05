@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 license = {text = "MIT"}
 
 [project.urls]
-Repository = "https://github.com/your-username/reconq"
+Repository = "https://github.com/raswanthmalai19/Reconq-Razorpay"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

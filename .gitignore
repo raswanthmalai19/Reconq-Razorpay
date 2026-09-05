@@ -1,34 +1,56 @@
 # Python
-.venv/
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 *.pyd
+.Python
+.venv/
+venv/
+env/
+ENV/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 *.egg-info/
 dist/
 build/
+pip-wheel-metadata/
+
+# Generated models and local runtime data
 *.joblib
 *.pkl
-models/*.joblib
-
-# Environment & secrets
-.env
-
-# Database
 *.db
 *.sqlite
+*.sqlite3
+models/*.joblib
+tmp/
+reconq_api_*/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
 
 # Node
 node_modules/
 frontend/dist/
+frontend/.vite/
 frontend/.oxlintrc.json
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 
-# OS
+# Coverage and test reports
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# OS and IDE
 .DS_Store
 Thumbs.db
-
-# IDE
 .vscode/
 .idea/
 *.swp
@@ -36,7 +58,3 @@ Thumbs.db
 
 # Logs
 *.log
-
-# Temp dirs created by API
-tmp/
-reconq_api_*/
